@@ -744,3 +744,18 @@ header.searchPagination {
 		width: 100%
 	}
 }
+.form-top-row {
+  margin: 0;
+}
+.sticky-top, .sticky-top-2 {
+  position: -webkit-sticky;
+  position: sticky;
+  z-index:1000;
+  background-color: #f2f2f2;
+}
+.sticky-top {
+  top: 120px;
+}
+.sticky-top-2 {
+  top: 170px;
+}

@@ -56,15 +56,19 @@ class Form extends Component {
 
 		return (
 			<BSForm {...bsProps} ref="container">
-				{showSubmit && <div className="row">
-					<div className="form-top-submit col-xs-12">
-						<div className="pull-right">
-							<Button bsStyle="primary"type="submit" disabled={submitDisabled}>
-								{submitText}
-							</Button>
-						</div>
-					</div>
-				</div>}
+				<div className="row form-top-row sticky-top">
+					<h2 className="legend">
+						<span className="title-text">{this.props.title}</span>
+						{showSubmit &&
+							<small>
+								<div>
+									<Button bsStyle="primary"type="submit" disabled={submitDisabled}>
+										{submitText}
+									</Button>
+								</div>
+							</small>}
+					</h2>
+				</div>
 
 				{children}
 

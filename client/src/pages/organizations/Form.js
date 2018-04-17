@@ -57,7 +57,9 @@ class OrganizationForm extends ValidatableFormWrapper {
 		return <div>
 			<NavigationWarning isBlocking={this.state.isBlocking} />
 
-			<ValidatableForm formFor={organization}
+			<ValidatableForm
+			title={edit ? `Edit Organization ${organization.shortName}` : "Create a new Organization"}
+			formFor={organization}
 			onChange={this.onChange}
 			onSubmit={this.onSubmit}
 			submitText="Save organization"
@@ -65,7 +67,7 @@ class OrganizationForm extends ValidatableFormWrapper {
 
 			<Messages error={this.state.error} />
 
-			<Fieldset title={edit ? `Edit Organization ${organization.shortName}` : "Create a new Organization"}>
+			<Fieldset>
 				<Form.Field id="type">
 					<ButtonToggleGroup>
 						<Button id="advisorOrgButton" disabled={!isAdmin} value={Organization.TYPE.ADVISOR_ORG}>{Settings.fields.advisor.org.name}</Button>
@@ -95,10 +97,10 @@ class OrganizationForm extends ValidatableFormWrapper {
 			</Fieldset>
 
 			{organization.isAdvisorOrg() && <div>
-				<Fieldset title="Approval process">
+				<Fieldset title="Approval process" stickyHeader={true} action={
 					<Button className="pull-right" onClick={this.addApprovalStep} bsStyle="primary" id="addApprovalStepButton" >
 						Add an Approval Step
-					</Button>
+					</Button>}>
 					<Modal show={this.state.showAddPositionAlert} onHide={this.hideAddPositionAlert}>
 						<Modal.Header closeButton>
 							<Modal.Title>Step not added</Modal.Title>
