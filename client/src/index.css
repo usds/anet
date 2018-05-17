@@ -219,6 +219,19 @@ fieldset.danger {
 	max-width: none;
 }
 
+.nprogress-custom-parent .bar {
+	top: 130px !important;
+}
+
+.nprogress-custom-parent .peg {
+	transform: rotate(-3deg) translate(0px, 4px) !important;
+}
+
+.nprogress-custom-parent .spinner {
+	top: 104px !important;
+	right: 8px !important;
+}
+
 .graphiql-container {
 	min-height: 600px;
 }
@@ -303,13 +316,16 @@ a.home-tile {
 	margin-right: 6px;
 }
 
-.nav .nav > li > a {
+.nav .nav > li {
 	border-left: 4px solid rgba(0,0,0,0);
+}
+
+.nav .nav > li a {
 	padding: 4px 0 4px 38px;
 }
 
-.nav .nav > li.active > a {
-	border-left: 4px solid #1772B8;
+.nav .nav > li.active  {
+	border-left:4px solid #1772B8;
 }
 
 li#search-nav .nav > li {
@@ -734,3 +750,12 @@ header.searchPagination {
 		width: 100%
 	}
 }
+
+.entity {
+	padding-left: 5px;
+	padding-right: 5px;
+	border:1px solid #e5e5e5;
+	background: #f8f8f8;
+	border-radius: 5px;
+}
+

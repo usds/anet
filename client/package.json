@@ -89,6 +89,7 @@
     "react-bootstrap": "^0.31.0",
     "react-confirm-bootstrap": "^5.2.1",
     "react-dom": "^16.2.0",
+    "react-hover-observer": "^2.1.0",
     "react-redux": "^5.0.7",
     "react-router": "^4.2.0",
     "react-router-bootstrap": "^0.24.4",

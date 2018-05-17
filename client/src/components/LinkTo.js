@@ -3,6 +3,8 @@ import {Link} from 'react-router-dom'
 import PropTypes from 'prop-types'
 import decodeQuery from 'querystring/decode'
 import utils from 'utils'
+import {Label,Overlay,Tooltip} from 'react-bootstrap'
+import ReactHoverObserver from 'react-hover-observer'
 
 import * as Models from 'models'
 
@@ -75,9 +77,27 @@ export default class LinkTo extends Component {
 		componentProps = Object.without(componentProps, modelName)
 
 		let Component = componentClass || Link
-		return <Component to={to} {...componentProps}>
-			{children || modelClass.prototype.toString.call(modelInstance)}
-		</Component>
+
+
+		let entityComponent = 
+				<Component to={to} {...componentProps}>
+			     	<span className = {`entity ${modelName}`}>
+						{children || modelClass.prototype.toString.call(modelInstance)}
+					</span>
+				</Component>
+			
+		const entityComponentWithHover = <ReactHoverObserver>
+		{({ isHovering }) => (
+			<span>
+				{entityComponent}
+				<Overlay show={isHovering===true} placement="right">
+					<Tooltip id="overload-right">Tooltip overload!</Tooltip>
+				</Overlay>
+			</span>		  )}
+</ReactHoverObserver>
+		
+		return 	entityComponentWithHover
+				
 	}
 }
 
