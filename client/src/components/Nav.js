@@ -2,30 +2,38 @@ import PropTypes from 'prop-types'
 import React, { Component } from 'react'
 import {Nav as BSNav, NavItem, NavDropdown, MenuItem} from 'react-bootstrap'
 import {IndexLinkContainer as Link} from 'react-router-bootstrap'
-import {Scrollspy} from 'react-scrollspy'
 import Settings from 'Settings'
 import LinkTo from 'components/LinkTo'
 import pluralize from 'pluralize'
 
-import {Organization} from 'models'
+import {Organization, Person} from 'models'
+import {INSIGHTS, INSIGHT_DETAILS} from 'pages/insights/Show'
 
+import AppContext from 'components/AppContext'
 import { withRouter } from 'react-router-dom'
 
-class Nav extends Component {
-	static contextTypes = {
-		app: PropTypes.object.isRequired,
+import {ScrollLink, scrollSpy} from 'react-scroll'
+
+class BaseNav extends Component {
+	static propTypes = {
+		currentUser: PropTypes.instanceOf(Person),
+		appSettings: PropTypes.object,
+		showFloatingMenu: PropTypes.func,
+		organizations: PropTypes.array,
+	}
+
+	componentDidMount() {
+		scrollSpy.update()
 	}
 
 	render() {
-		const appData = this.context.app.state
-		const currentUser = appData.currentUser
-		const organizations = appData.organizations || []
+		const { currentUser } = this.props
+		const { organizations } = this.props || []
+		const { appSettings } = this.props || {}
+		const externalDocumentationUrl = appSettings.EXTERNAL_DOCUMENTATION_LINK_URL
+		const externalDocumentationUrlText = appSettings.EXTERNAL_DOCUMENTATION_LINK_TEXT
+
 		const path = this.props.location.pathname
-
-		const {settings} = appData || {}
-		const externalDocumentationUrl = settings.EXTERNAL_DOCUMENTATION_LINK_URL
-		const externalDocumentationUrlText = settings.EXTERNAL_DOCUMENTATION_LINK_TEXT
-
 		const inAdmin = path.indexOf('/admin') === 0
 		const inOrg = path.indexOf('/organizations') === 0
 		const inMyReports = path.indexOf('/reports/mine') === 0
@@ -38,43 +46,58 @@ class Nav extends Component {
 			myOrgId = myOrg && +myOrg.id
 		}
 
+		const showFloatingMenu = this.props.showFloatingMenu
+		const ScrollLinkNavItem = ScrollLink(NavItem)
+		const AnchorNavItem = function(props) {
+			const {to, ...remainingProps} = props
+			return <ScrollLinkNavItem
+					activeClass="active"
+					to={to}
+					spy={true}
+					hashSpy={true}
+					smooth={true}
+					duration={500}
+					containerId="main-viewport"
+					offset={-120}
+					onClick={() => {
+						showFloatingMenu(false)
+					}}
+					{...remainingProps}>
+						{props.children}
+				</ScrollLinkNavItem>
+			//TODO: fix the need for offset
+		}
+
 		const orgSubNav = (
-			<SubNav
-				componentClass={Scrollspy}
-				className="nav"
-				offset={-152}
-			>
-				<AnchorLink scrollTo="info">Info</AnchorLink>
-				<AnchorLink scrollTo="laydown">Laydown</AnchorLink>
-				<AnchorLink scrollTo="approvals">Approvals</AnchorLink>
-				<AnchorLink scrollTo="tasks">{pluralize(Settings.fields.task.shortLabel)}</AnchorLink>
-				<AnchorLink scrollTo="reports">Reports</AnchorLink>
-			</SubNav>
+			<BSNav>
+				<AnchorNavItem to="info" >Info</AnchorNavItem>
+				<AnchorNavItem to="supportedPositions" >Supported positions</AnchorNavItem>
+				<AnchorNavItem to="vacantPositions" >Vacant positions</AnchorNavItem>
+				<AnchorNavItem to="approvals" >Approvals</AnchorNavItem>
+				<AnchorNavItem to="tasks" >{pluralize(Settings.fields.task.shortLabel)}</AnchorNavItem>
+				<AnchorNavItem to="reports" >Reports</AnchorNavItem>
+			</BSNav>
 		)
 
 		return (
-			<BSNav bsStyle="pills" stacked id="leftNav">
+			<BSNav bsStyle="pills" stacked id="leftNav" className="hide-for-print">
 				<Link to="/">
 					<NavItem>Home</NavItem>
 				</Link>
 
-				<li id="search-nav"></li>
+				<BSNav id="search-nav"></BSNav>
 
 				{currentUser.id && <Link to={{pathname: '/reports/mine'}}>
 					<NavItem>My reports</NavItem>
 				</Link>}
 
 				{inMyReports &&
-					<SubNav
-						componentClass={Scrollspy}
-						className="nav"
-						offset={-152}
-					>
-						<AnchorLink scrollTo="draft-reports">Draft reports</AnchorLink>
-						<AnchorLink scrollTo="upcoming-engagements">Upcoming Engagements</AnchorLink>
-						<AnchorLink scrollTo="pending-approval">Pending approval</AnchorLink>
-						<AnchorLink scrollTo="published-reports">Published reports</AnchorLink>
-					</SubNav>
+					<BSNav>
+						<AnchorNavItem to="draft-reports">Draft reports</AnchorNavItem>
+						<AnchorNavItem to="upcoming-engagements">Upcoming Engagements</AnchorNavItem>
+						<AnchorNavItem to="pending-approval">Pending approval</AnchorNavItem>
+						<AnchorNavItem to="published-reports">Published reports</AnchorNavItem>
+					</BSNav>
 				}
 
 				{myOrg && <Link to={Organization.pathFor(myOrg)}>
@@ -110,16 +133,14 @@ class Nav extends Component {
 				}
 
 				{inAdmin &&
-					<SubNav>
+					<BSNav>
 						<Link to={"/admin/mergePeople"}><NavItem>Merge people</NavItem></Link>
 						<Link to={"/admin/authorizationGroups"}><NavItem>Authorization groups</NavItem></Link>
-					</SubNav>
+					</BSNav>
 				}
 				
 				{externalDocumentationUrl && externalDocumentationUrlText &&
-					<li alt="">
-						<a href={externalDocumentationUrl} target="_extdocs">{externalDocumentationUrlText}</a>
-					</li>
+					<NavItem href={externalDocumentationUrl} target="_extdocs">{externalDocumentationUrlText}</NavItem>
 				}
 
 				<Link to="/help">
@@ -128,24 +149,11 @@ class Nav extends Component {
 
 				{(currentUser.isAdmin() || currentUser.isSuperUser()) &&
 					<NavDropdown title="Insights" id="insights" active={inInsights}>
-						<Link to="/insights/not-approved-reports">
-							<MenuItem>Pending approval reports</MenuItem>
-						</Link>
-						<Link to="/insights/cancelled-reports">
-							<MenuItem>Cancelled engagement reports</MenuItem>
-						</Link>
-						<Link to="/insights/reports-by-task">
-							<MenuItem>Reports by task</MenuItem>
-						</Link>
-						<Link to="/insights/future-engagements-by-location">
-							<MenuItem>Future engagements by location</MenuItem>
-						</Link>
-						<Link to="/insights/reports-by-day-of-week">
-							<MenuItem>Reports by day of the week</MenuItem>
-						</Link>
-						<Link to="/insights/advisor-reports">
-							<MenuItem>Advisor reports</MenuItem>
-						</Link>
+						{INSIGHTS.map(insight =>
+							<Link to={"/insights/" + insight} key={insight}>
+								<MenuItem>{INSIGHT_DETAILS[insight].navTitle}</MenuItem>
+							</Link>)
+						}
 					</NavDropdown>
 				}
 			</BSNav>
@@ -153,23 +161,12 @@ class Nav extends Component {
 	}
 }
 
+const Nav = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BaseNav appSettings={context.appSettings} currentUser={context.currentUser} showFloatingMenu={context.showFloatingMenu} {...props} />
+		}
+	</AppContext.Consumer>
+)
+
 export default withRouter(Nav)
-
-function SubNav(props) {
-	let {componentClass, ...childProps} = props
-	childProps = Object.without(childProps, 'active')
-
-	let Component = componentClass || BSNav
-	return <li>
-		<Component {...childProps} />
-	</li>
-}
-
-const AnchorLink = function(props) {
-	const {scrollTo, ...childProps} = props
-	const onClick = function() {
-		const elem = document.getElementById(scrollTo)
-		elem && elem.scrollIntoView(true)
-	}
-	return <NavItem onClick={onClick} {...childProps} />
-}

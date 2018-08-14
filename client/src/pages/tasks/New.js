@@ -1,22 +1,23 @@
-import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 
 import TaskForm from './Form'
 import Breadcrumbs from 'components/Breadcrumbs'
 
 import API from 'api'
 import Settings from 'Settings'
-import {Task,Organization} from 'models'
+import {Organization, Person, Task} from 'models'
 
 import utils from 'utils'
 
-import { setPageProps, PAGE_PROPS_NO_NAV } from 'actions'
+import { PAGE_PROPS_NO_NAV } from 'actions'
 import { connect } from 'react-redux'
 
 class TaskNew extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
+	static propTypes = {
+		...pagePropTypes,
+	}
 
 	constructor(props) {
 		super(props, PAGE_PROPS_NO_NAV)
@@ -30,7 +31,7 @@ class TaskNew extends Page {
 	fetchData(props) {
 		const qs = utils.parseQueryString(props.location.search)
 		if (qs.responsibleOrgId) {
-			API.query(/* GraphQL */`
+			return API.query(/* GraphQL */`
 				organization(id: ${qs.responsibleOrgId}) {
 					id, shortName, longName, identificationCode, type
 				}
@@ -55,9 +56,5 @@ class TaskNew extends Page {
 		)
 	}
 }
-
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
 
 export default connect(null, mapDispatchToProps)(TaskNew)

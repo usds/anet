@@ -14,23 +14,23 @@ import Messages from 'components/Messages'
 
 import API from 'api'
 import Settings from 'Settings'
-import {Position, Organization} from 'models'
+import {Organization, Person, Position} from 'models'
 
 import DictionaryField from '../../HOC/DictionaryField'
 
 import REMOVE_ICON from 'resources/delete.png'
 
+import AppContext from 'components/AppContext'
 import { withRouter } from 'react-router-dom'
 import NavigationWarning from 'components/NavigationWarning'
+import { jumpToTop } from 'components/Page'
 
-class OrganizationForm extends ValidatableFormWrapper {
+class BaseOrganizationForm extends ValidatableFormWrapper {
 	static propTypes = {
 		organization: PropTypes.object,
+		original: PropTypes.object.isRequired,
 		edit: PropTypes.bool,
-	}
-
-	static contextTypes = {
-		currentUser: PropTypes.object.isRequired,
+		currentUser: PropTypes.instanceOf(Person),
 	}
 
 	constructor(props) {
@@ -38,16 +38,15 @@ class OrganizationForm extends ValidatableFormWrapper {
 		this.state = {
 			isBlocking: false,
 			error: null,
-			showAddPositionAlert: false,
+			showAddApprovalStepAlert: false,
 		}
 		this.IdentificationCodeFieldWithLabel = DictionaryField(Form.Field)
 		this.LongNameWithLabel = DictionaryField(Form.Field)
 	}
 
 	render() {
-		let {organization, edit} = this.props
+		const { organization, edit, currentUser } = this.props
 		let {approvalSteps} = organization
-		let currentUser = this.context.currentUser 
 		let isAdmin = currentUser && currentUser.isAdmin()
 		let isPrincipalOrg = (organization.type === Organization.TYPE.PRINCIPAL_ORG)
 		const {ValidatableForm, RequiredField} = this
@@ -97,11 +96,11 @@ class OrganizationForm extends ValidatableFormWrapper {
 			</Fieldset>
 
 			{organization.isAdvisorOrg() && <div>
-				<Fieldset title="Approval process" stickyHeader={true} action={
+				<Fieldset title="Approval process" stickyClass="sticky-top-2" action={
 					<Button className="pull-right" onClick={this.addApprovalStep} bsStyle="primary" id="addApprovalStepButton" >
 						Add an Approval Step
 					</Button>}>
-					<Modal show={this.state.showAddPositionAlert} onHide={this.hideAddPositionAlert}>
+					<Modal show={this.state.showAddApprovalStepAlert} onHide={this.hideAddApprovalStepAlert}>
 						<Modal.Header closeButton>
 							<Modal.Title>Step not added</Modal.Title>
 						</Modal.Header>
@@ -109,7 +108,7 @@ class OrganizationForm extends ValidatableFormWrapper {
 							Please complete all approval steps; there already is an approval step that is not completely filled in.
 						</Modal.Body>
 						<Modal.Footer>
-							<Button className="pull-right" onClick={this.hideAddPositionAlert} bsStyle="primary">OK</Button>
+							<Button className="pull-right" onClick={this.hideAddApprovalStepAlert} bsStyle="primary">OK</Button>
 						</Modal.Footer>
 					</Modal>
 
@@ -145,13 +144,9 @@ class OrganizationForm extends ValidatableFormWrapper {
 					placeholder="Search for the approver's position"
 					objectType={Position}
 					fields="id, name, code, type, person { id, name, rank }"
-					template={pos => {
-						let components = []
-						pos.person && components.push(pos.person.name)
-						pos.name && components.push(pos.name)
-						pos.code && components.push(pos.code)
-						return <span>{components.join(' - ')}</span>
-					}}
+					template={position => 
+						<span> {position.person && <span> <LinkTo person={position.person} isLink={false}/> - </span>} <LinkTo position={position} isLink={false}/> {position.code && <span> - {position.code} </span>} </span>
+					}
 					queryParams={{status: Position.STATUS.ACTIVE, type: [Position.TYPE.ADVISOR, Position.TYPE.SUPER_USER, Position.TYPE.ADMINISTRATOR], matchPersonName: true}}
 					onChange={this.addApprover.bind(this, index)}
 					clearOnSelect={true} />
@@ -217,8 +212,8 @@ class OrganizationForm extends ValidatableFormWrapper {
 	}
 
 	@autobind
-	hideAddPositionAlert() {
-		this.setState({showAddPositionAlert: false})
+	hideAddApprovalStepAlert() {
+		this.setState({showAddApprovalStepAlert: false})
 	}
 
 	@autobind
@@ -229,7 +224,7 @@ class OrganizationForm extends ValidatableFormWrapper {
 		for (let i = 0; i < approvalSteps.length; i++) {
 			const step = approvalSteps[i]
 			if (!step.name || !step.approvers || step.approvers.length === 0) {
-				this.setState({showAddPositionAlert: true})
+				this.setState({showAddApprovalStepAlert: true})
 				return
 			}
 		}
@@ -248,9 +243,8 @@ class OrganizationForm extends ValidatableFormWrapper {
 	@autobind
 	onChange() {
 		this.setState({
-			isBlocking: this.formHasUnsavedChanges(this.state.report, this.props.original),
+			isBlocking: this.formHasUnsavedChanges(this.props.organization, this.props.original),
 		})
-		this.forceUpdate()
 	}
 
 	@autobind
@@ -266,7 +260,6 @@ class OrganizationForm extends ValidatableFormWrapper {
 
 		let url = `/api/organizations/${this.props.edit ? 'update' : 'new'}`
 		this.setState({isBlocking: false})
-		this.forceUpdate()
 		API.send(url, organization, {disableSubmits: true})
 			.then(response => {
 				if (response.code) {
@@ -285,9 +278,17 @@ class OrganizationForm extends ValidatableFormWrapper {
 				})
 			}).catch(error => {
 				this.setState({error})
-				window.scrollTo(0, 0)
+				jumpToTop()
 			})
 	}
 }
+
+const OrganizationForm = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BaseOrganizationForm currentUser={context.currentUser} {...props} />
+		}
+	</AppContext.Consumer>
+)
 
 export default withRouter(OrganizationForm)

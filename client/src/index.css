@@ -12,15 +12,11 @@ html {
 
 body {
 	background: #f2f2f2;
+	overflow: hidden;
 }
 
-/* this makes jump links work correctly with the header overlaying content */
-*[data-jumptarget]:before {
-  display: block;
-  content: " ";
-  margin-top: -152px;
-  height: 152px;
-  visibility: hidden;
+.anet {
+	height:100vh;
 }
 
 h5 {
@@ -29,6 +25,7 @@ h5 {
 
 .breadcrumb {
 	background: #f9f9f9;
+	margin-top: 10px;
 }
 
 button {
@@ -199,11 +196,20 @@ fieldset.danger {
 	margin: 0;
 }
 
-.header small a {
+.header small span {
 	padding: 5px;
 	text-decoration: underline;
 	display: inline-block;
+}
+
+span.asLink {
 	cursor: pointer;
+	color: #337ab7;
+}
+span.asLink:hover,
+span.asLink:focus {
+	text-decoration: underline;
+	color: #23527c;
 }
 
 .banner {
@@ -217,19 +223,6 @@ fieldset.danger {
 #advanced-search.popover {
 	width: 600px;
 	max-width: none;
-}
-
-.nprogress-custom-parent .bar {
-	top: 130px !important;
-}
-
-.nprogress-custom-parent .peg {
-	transform: rotate(-3deg) translate(0px, 4px) !important;
-}
-
-.nprogress-custom-parent .spinner {
-	top: 104px !important;
-	right: 8px !important;
 }
 
 .graphiql-container {
@@ -250,7 +243,7 @@ fieldset.danger {
 }
 
 .home-tile-row .row {
-	display: table;n
+	display: table;
 	width: 100%;
 	margin: 0;
 }
@@ -273,7 +266,7 @@ fieldset.danger {
 	text-decoration: none;
 }
 
-a.home-tile {
+button.home-tile.btn {
 	display: table-cell;
 	width: 20%;
 	float: none;
@@ -289,6 +282,9 @@ a.home-tile {
 
 .home-tile:hover {
 	background: #dae3ee;
+}
+.home-tile:hover, .home-tile:focus {
+	text-decoration: none;
 }
 
 .person-icon, .position-icon {
@@ -316,16 +312,14 @@ a.home-tile {
 	margin-right: 6px;
 }
 
-.nav .nav > li {
+.nav .nav > li > a {
 	border-left: 4px solid rgba(0,0,0,0);
-}
-
-.nav .nav > li a {
 	padding: 4px 0 4px 38px;
+	padding-right: 4px;
 }
 
-.nav .nav > li.active  {
-	border-left:4px solid #1772B8;
+.nav .nav > li.active > a {
+	border-left: 4px solid #1772B8;
 }
 
 li#search-nav .nav > li {
@@ -334,6 +328,22 @@ li#search-nav .nav > li {
 
 li#search-nav .nav > li a {
 	padding-right: 4px;
+}
+
+.nav-fixed {
+	flex:0 0 auto;
+	padding:8px;
+}
+
+.nav-overlay {
+	padding:8px;
+	border: 1px solid #e0e0e0;
+	height: 100%;
+	position: absolute;
+	background: #f2f2f2;
+	left: 0;
+	z-index: 9999;
+	overflow-y:auto;
 }
 
 .report-sub-form .form-group {
@@ -664,6 +674,10 @@ header.searchPagination {
 .advanced-search select {
 	height: 32px;
 }
+.advanced-search select[multiple] {
+	height: 64px;
+}
+
 .only-show-for-print {
 	display: none;
 }
@@ -693,6 +707,11 @@ header.searchPagination {
 
 .reports-filter {
 	padding-top: 18px;
+}
+
+.scroll-anchor-container {
+	/* trick so we don't have no man's land between two scroll anchor containers */
+	padding-bottom: 1px;
 }
 
 @keyframes flash {
@@ -744,18 +763,41 @@ header.searchPagination {
 		width: 100%
 	}
 }
-.form-top-row {
-  margin: 0;
+
+.primary-content {
+	flex:1 1 auto;
+	overflow-y:auto;
+	overflow-x:hidden;
+	padding-right: 10px;
+	padding-left: 10px;
 }
-.sticky-top, .sticky-top-2 {
+
+.glass-pane {
+	position: absolute;
+	background: rgba(0, 0, 0, 0.6);
+    width: 100%;
+    height: 100vh;
+	left: 0;
+	z-index: 9998;
+}
+
+.sticky-top-0, .sticky-top-1, .sticky-top-2 {
   position: -webkit-sticky;
   position: sticky;
   z-index:1000;
+}
+/* used for the breadcrumb */
+.sticky-top-0 {
+  top: 10px;
   background-color: #f2f2f2;
 }
-.sticky-top {
-  top: 120px;
+/* used for the page title */
+.sticky-top-1 {
+  top: 40px;
+  background-color: #f2f2f2;
 }
+/* used for the fieldset title, level 2 */
 .sticky-top-2 {
-  top: 170px;
+  top: 70px;
+  background-color: #ffffff;
 }

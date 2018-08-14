@@ -16,37 +16,54 @@ import API from 'api'
 import Settings from 'Settings'
 import {Person} from 'models'
 import utils from 'utils'
+import pluralize from 'pluralize'
 
 import CALENDAR_ICON from 'resources/calendar.png'
 import 'components/NameInput.css'
 
 import TriggerableConfirm from 'components/TriggerableConfirm'
 
+import AppContext from 'components/AppContext'
 import { withRouter } from 'react-router-dom'
 import NavigationWarning from 'components/NavigationWarning'
+import { jumpToTop } from 'components/Page'
 
-class PersonForm extends ValidatableFormWrapper {
+class BasePersonForm extends ValidatableFormWrapper {
 	static propTypes = {
 		person: PropTypes.object.isRequired,
+		original: PropTypes.object.isRequired,
 		edit: PropTypes.bool,
 		legendText: PropTypes.string,
 		saveText: PropTypes.string,
-	}
-
-	static contextTypes = {
-		app: PropTypes.object.isRequired,
-		currentUser: PropTypes.object.isRequired,
+		currentUser: PropTypes.instanceOf(Person),
+		loadAppData: PropTypes.func,
 	}
 
 	constructor(props) {
 		super(props)
+		const { person } = props
+		const splitName = Person.parseFullName(person.name)
 		this.state = {
 			isBlocking: false,
-			person: null,
+			fullName: Person.fullName(splitName),
+			splitName: splitName,
 			error: null,
-			originalStatus: props.person.status,
+			originalStatus: person.status,
 			showWrongPersonModal: false,
 			wrongPersonOptionValue: null,
+		}
+	}
+
+	componentDidUpdate(prevProps, prevState) {
+		const { person } = this.props
+		const prevPerson = prevProps.person
+		if (person.id !== prevPerson.id) {
+			const splitName = Person.parseFullName(person.name)
+			this.setState({
+				fullName: Person.fullName(splitName),
+				splitName: splitName,
+				originalStatus: person.status,
+			})
 		}
 	}
 
@@ -68,11 +85,12 @@ class PersonForm extends ValidatableFormWrapper {
 	}
 
 	render() {
-		if (this.state.person === null) return null
-		const { person } = this.state
+		const { person } = this.props
+		if (!person) return null
 		const { edit } = this.props
 		const isAdvisor = person.isAdvisor()
-		const legendText = this.props.legendText || (edit ? `Edit Person ${person.name}` : 'Create a new Person')
+		const { fullName } = this.state
+		const legendText = this.props.legendText || (edit ? `Edit Person ${fullName}` : 'Create a new Person')
 
 		const {ValidatableForm, RequiredField} = this
 
@@ -90,10 +108,11 @@ class PersonForm extends ValidatableFormWrapper {
 			type: "text",
 			display: "inline",
 			placeholder: "First name(s)",
+			value: this.state.splitName.firstName,
 			onChange: this.handleOnChangeFirstName
 		}
 
-		const currentUser = this.context.currentUser
+		const { currentUser } = this.props
 		const isAdmin = currentUser && currentUser.isAdmin()
 		const isSelf = Person.isEqual(currentUser, person)
 		const disableStatusChange = this.state.originalStatus === Person.STATUS.INACTIVE || isSelf
@@ -104,13 +123,15 @@ class PersonForm extends ValidatableFormWrapper {
 						isSelf
 				)
 			)
-		const fullName = Person.fullName(this.state.person)
 		const nameMessage = "This is not " + (isSelf ? "me" : fullName)
 		const modalTitle = `It is possible that the information of ${fullName} is out of date. Please help us identify if any of the following is the case:`
 
 		const confirmLabel = this.state.wrongPersonOptionValue === 'needNewAccount'
-      ? 'Yes, I would like to inactivate my predecessor\'s account and set up a new one for myself'
-          : 'Yes, I would like to inactivate this account'
+				? 'Yes, I would like to inactivate my predecessor\'s account and set up a new one for myself'
+				: 'Yes, I would like to inactivate this account'
+		const advisorSingular = Settings.fields.advisor.person.name
+		const advisorPlural = pluralize(advisorSingular)
+		const superUserAdvisorTitle = isAdmin ? null : `Super users cannot create ${advisorSingular} profiles. ANET uses the domain user name to authenticate and uniquely identify each ANET user. To ensure that ${advisorPlural} have the correct domain name associated with their profile, it is required that each new ${advisorSingular} individually logs into ANET and creates their own ANET profile.`
 
 		return <div>
 			<NavigationWarning isBlocking={this.state.isBlocking} />
@@ -130,6 +151,7 @@ class PersonForm extends ValidatableFormWrapper {
 								type="text"
 								display="inline"
 								placeholder="LAST NAME"
+								value={this.state.splitName.lastName}
 								onChange={this.handleOnChangeLastName}
 								onKeyDown={this.handleOnKeyDown}
 								/>
@@ -202,12 +224,20 @@ class PersonForm extends ValidatableFormWrapper {
 					}
 				</FormGroup>
 
+				{isAdmin &&
+					<Form.Field id="domainUsername">
+						<Form.Field.ExtraCol>
+							<span className="text-danger">Be careful when changing this field; you might lock someone out or create duplicate accounts.</span>
+						</Form.Field.ExtraCol>
+					</Form.Field>
+				}
+
 				{edit ?
 					<Form.Field type="static" id="role" value={person.humanNameOfRole()} />
 					:
 					<Form.Field id="role">
 						<ButtonToggleGroup>
-							<Button id="roleAdvisorButton" disabled={!isAdmin} value={Person.ROLE.ADVISOR}>{Settings.fields.advisor.person.name}</Button>
+							<Button id="roleAdvisorButton" disabled={!isAdmin} title={superUserAdvisorTitle} value={Person.ROLE.ADVISOR}>{Settings.fields.advisor.person.name}</Button>
 							<Button id="rolePrincipalButton" value={Person.ROLE.PRINCIPAL}>{Settings.fields.principal.person.name}</Button>
 						</ButtonToggleGroup>
 					</Form.Field>
@@ -280,21 +310,11 @@ class PersonForm extends ValidatableFormWrapper {
 		</div>
 	}
 
-	componentWillReceiveProps(nextProps) {
-		const { person } = nextProps
-		const emptyName = { lastName: '', firstName: ''}
+	getFullName(splitName, editName) {
+		if (editName.lastName !== undefined) { splitName.lastName = editName.lastName }
+		if (editName.firstName !== undefined) { splitName.firstName = editName.firstName }
 
-		const parsedName = person.name ? Person.parseFullName(person.name) : emptyName
-
-		this.savePersonWithFullName(person, parsedName)
-	}
-
-	savePersonWithFullName(person, editName) {
-		if (editName.lastName) { person.lastName = editName.lastName }
-		if (editName.firstName) { person.firstName = editName.firstName }
-
-		person.name = Person.fullName(person)
-		this.setState({ person })
+		return Person.fullName(splitName)
 	}
 
 	handleOnKeyDown = (event) => {
@@ -306,24 +326,28 @@ class PersonForm extends ValidatableFormWrapper {
 
 	handleOnChangeLastName = (event) => {
 		const value = event.target.value
-		const { person } = this.state
-
-		this.savePersonWithFullName(person, { lastName: value })
+		const { splitName } = this.state
+		this.setState({
+			fullName: this.getFullName(splitName, { lastName: value }),
+			splitName: splitName
+		})
 	}
 
 	handleOnChangeFirstName = (event) => {
 		const value = event.target.value
-		const { person } = this.state
-
-		this.savePersonWithFullName(person, { firstName: value })
+		const { splitName } = this.state
+		this.setState({
+			fullName: this.getFullName(splitName, { firstName: value }),
+			splitName: splitName
+		})
 	}
 
 	@autobind
 	onChange() {
+		const person = Object.without(this.props.person, 'firstName', 'lastName')
 		this.setState({
-			isBlocking: this.formHasUnsavedChanges(this.state.report, this.props.original),
+			isBlocking: this.formHasUnsavedChanges(person, this.props.original),
 		})
-		this.forceUpdate()
 	}
 
 	@autobind
@@ -333,8 +357,7 @@ class PersonForm extends ValidatableFormWrapper {
 
 	@autobind
 	onSubmit(event) {
-		const { edit } = this.props
-		let { person } = this.state
+		const { edit, person } = this.props
 		let isFirstTimeUser = false
 		if (person.isNewUser()) {
 			isFirstTimeUser = true
@@ -347,10 +370,10 @@ class PersonForm extends ValidatableFormWrapper {
 	updatePerson(person, edit, isNew) {
 		// Clean up person object for JSON response
 		person = Object.without(person, 'firstName', 'lastName')
+		person.name = Person.fullName(this.state.splitName, true)
 
 		let url = `/api/people/${edit ? 'update' : 'new'}`
 		this.setState({isBlocking: false})
-		this.forceUpdate()
 		API.send(url, person, {disableSubmits: true})
 			.then(response => {
 				if (response.code) {
@@ -360,7 +383,7 @@ class PersonForm extends ValidatableFormWrapper {
 				if (isNew) {
 					localStorage.clear()
 					localStorage.newUser = 'true'
-					this.context.app.loadData()
+					this.props.loadAppData()
 					this.props.history.push({
 						pathname: '/',
 					})
@@ -378,7 +401,7 @@ class PersonForm extends ValidatableFormWrapper {
 				}
 			}).catch(error => {
 				this.setState({error: error})
-				window.scrollTo(0, 0)
+				jumpToTop()
 			})
 	}
 
@@ -389,7 +412,7 @@ class PersonForm extends ValidatableFormWrapper {
 
 	@autobind
 	confirmReset() {
-		const { person } = this.state
+		const { person } = this.props
 		person.status = Person.STATUS.INACTIVE
 		this.updatePerson(person, true, this.state.wrongPersonOptionValue === 'needNewAccount')
 	}
@@ -414,5 +437,13 @@ class PersonForm extends ValidatableFormWrapper {
 		}
 	}
 }
+
+const PersonForm = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BasePersonForm currentUser={context.currentUser} loadAppData={context.loadAppData} {...props} />
+		}
+	</AppContext.Consumer>
+)
 
 export default withRouter(PersonForm)

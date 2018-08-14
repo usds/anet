@@ -1,21 +1,22 @@
-import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 
 import OrganizationForm from './Form'
 import Breadcrumbs from 'components/Breadcrumbs'
 
 import API from 'api'
-import {Organization} from 'models'
+import {Organization, Person} from 'models'
 
 import utils from 'utils'
 
-import { setPageProps, PAGE_PROPS_NO_NAV } from 'actions'
+import { PAGE_PROPS_NO_NAV } from 'actions'
 import { connect } from 'react-redux'
 
 class OrganizationNew extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
+	static propTypes = {
+		...pagePropTypes,
+	}
 
 	constructor(props) {
 		super(props, PAGE_PROPS_NO_NAV)
@@ -29,7 +30,7 @@ class OrganizationNew extends Page {
 	fetchData(props) {
 		const qs = utils.parseQueryString(props.location.search)
 		if (qs.parentOrgId) {
-			API.query(/* GraphQL */`
+			return API.query(/* GraphQL */`
 				organization(id: ${qs.parentOrgId}) {
 					id, shortName, longName, identificationCode, type
 				}
@@ -59,9 +60,5 @@ class OrganizationNew extends Page {
 		)
 	}
 }
-
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
 
 export default connect(null, mapDispatchToProps)(OrganizationNew)

@@ -1,20 +1,21 @@
-import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 
 import OrganizationForm from './Form'
 import Breadcrumbs from 'components/Breadcrumbs'
 import Messages from 'components/Messages'
 
 import API from 'api'
-import {Organization} from 'models'
+import {Organization, Person} from 'models'
 
-import { setPageProps, PAGE_PROPS_NO_NAV } from 'actions'
+import { PAGE_PROPS_NO_NAV } from 'actions'
 import { connect } from 'react-redux'
 
 class OrganizationEdit extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
+	static propTypes = {
+		...pagePropTypes,
+	}
 
 	static modelName = 'Organization'
 
@@ -22,17 +23,18 @@ class OrganizationEdit extends Page {
 		super(props, PAGE_PROPS_NO_NAV)
 
 		this.state = {
+			originalOrganization: new Organization(),
 			organization: new Organization(),
 		}
 	}
 
 	fetchData(props) {
-		API.query(/* GraphQL */`
+		return API.query(/* GraphQL */`
 			organization(id:${props.match.params.id}) {
 				id, shortName, longName, status, identificationCode, type,
 				parentOrg { id, shortName, longName, identificationCode }
 				approvalSteps { id, name
-					approvers { id, name, person { id, name}}
+					approvers { id, name, person { id, name, rank}}
 				},
 				tasks { id, shortName, longName}
 			}
@@ -57,9 +59,5 @@ class OrganizationEdit extends Page {
 		)
 	}
 }
-
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
 
 export default connect(null, mapDispatchToProps)(OrganizationEdit)

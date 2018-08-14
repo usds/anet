@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types'
 
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 import {Link} from 'react-router-dom'
 import {Table, Button} from 'react-bootstrap'
 import moment from 'moment'
@@ -19,21 +19,20 @@ import {positionTour} from 'pages/HopscotchTour'
 
 import API from 'api'
 import Settings from 'Settings'
-import {Position, Organization} from 'models'
+import {Organization, Person, Position} from 'models'
 import autobind from 'autobind-decorator'
 
 import ConfirmDelete from 'components/ConfirmDelete'
 
+import AppContext from 'components/AppContext'
 import { withRouter } from 'react-router-dom'
-import { setPageProps } from 'actions'
 import { connect } from 'react-redux'
 
-class PositionShow extends Page {
+class BasePositionShow extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
-
-	static contextTypes = {
-		currentUser: PropTypes.object.isRequired,
+	static propTypes = {
+		...pagePropTypes,
+		currentUser: PropTypes.instanceOf(Person),
 	}
 
 	static modelName = 'Position'
@@ -55,7 +54,7 @@ class PositionShow extends Page {
 	}
 
 	fetchData(props) {
-		API.query(/* GraphQL */`
+		return API.query(/* GraphQL */`
 			position(id:${props.match.params.id}) {
 				id, name, type, status, code,
 				organization { id, shortName, longName, identificationCode },
@@ -74,7 +73,7 @@ class PositionShow extends Page {
 		const position = this.state.position
 		const assignedRole = position.type === Position.TYPE.PRINCIPAL ? Settings.fields.advisor.person.name : Settings.fields.principal.person.name // TODO: shouldn't this be Position.humanNameOfType instead of a person title?
 
-		const currentUser = this.context.currentUser
+		const { currentUser } = this.props
 		const canEdit =
 			//Super Users can edit any Principal
 			(currentUser.isSuperUser() && position.type === Position.TYPE.PRINCIPAL) ||
@@ -130,7 +129,7 @@ class PositionShow extends Page {
 						action={position.person && position.person.id && canEdit && <Button onClick={this.showAssignPersonModal}>Change assigned person</Button>} >
 						{position.person && position.person.id
 							? <div>
-								<h4 className="assigned-person-name"><LinkTo person={position.person}>{position.person.rank} {position.person.name}</LinkTo></h4>
+								<h4 className="assigned-person-name"><LinkTo person={position.person}/></h4>
 								<p></p>
 							</div>
 							: <div>
@@ -263,8 +262,12 @@ class PositionShow extends Page {
 	}
 }
 
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
+const PositionShow = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BasePositionShow currentUser={context.currentUser} {...props} />
+		}
+	</AppContext.Consumer>
+)
 
 export default connect(null, mapDispatchToProps)(withRouter(PositionShow))

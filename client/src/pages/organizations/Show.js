@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 import {ListGroup, ListGroupItem} from 'react-bootstrap'
 import autobind from 'autobind-decorator'
 
@@ -20,20 +20,19 @@ import OrganizationLaydown from './Laydown'
 import OrganizationApprovals from './Approvals'
 
 import Settings from 'Settings'
-import {Organization, Position, Report, Task} from 'models'
+import {Organization, Person, Position, Report, Task} from 'models'
 import GQL from 'graphqlapi'
 
-import { setPageProps } from 'actions'
+import AppContext from 'components/AppContext'
 import { connect } from 'react-redux'
 
 const NO_REPORT_FILTER = 'NO_FILTER'
 
-class OrganizationShow extends Page {
+class BaseOrganizationShow extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
-
-	static contextTypes = {
-		currentUser: PropTypes.object.isRequired,
+	static propTypes = {
+		...pagePropTypes,
+		currentUser: PropTypes.instanceOf(Person),
 	}
 
 	static modelName = 'Organization'
@@ -46,7 +45,6 @@ class OrganizationShow extends Page {
 			reports: null,
 			tasks: null,
 			reportsFilter: NO_REPORT_FILTER,
-			action: props.match.params.action
 		}
 
 		this.reportsPageNum = 0
@@ -58,18 +56,12 @@ class OrganizationShow extends Page {
 		setMessages(props,this.state)
 	}
 
-	componentWillReceiveProps(nextProps) {
-		if (nextProps.match.params.action !== this.state.action) {
-			this.setState({action: nextProps.match.params.action})
-		}
-
-		if (+nextProps.match.params.id !== this.state.organization.id) {
-			this.loadData(nextProps)
-		}
-	}
-
 	componentDidUpdate(prevProps, prevState) {
-		if(prevState.reportsFilter !== this.state.reportsFilter){
+		// Re-load data if id has changed (convert to number before comparing)
+		if (+this.props.match.params.id !== +prevProps.match.params.id) {
+			this.loadData()
+		}
+		else if (prevState.reportsFilter !== this.state.reportsFilter) {
 			let reports = this.getReportQueryPart(this.props.match.params.id)
 			this.runGQLReports([reports])
 		}
@@ -124,17 +116,17 @@ class OrganizationShow extends Page {
 					}
 				},
 				approvalSteps {
-					id, name, approvers { id, name, person { id, name}}
+					id, name, approvers { id, name, person { id, name, rank}}
 				}
 			}`)
 		let reportsPart = this.getReportQueryPart(props.match.params.id)
 		let tasksPart = this.gettaskQueryPart(props.match.params.id)
 
-		this.runGQL([orgPart, reportsPart, tasksPart])
+		return this.runGQL([orgPart, reportsPart, tasksPart])
 	}
 
 	runGQL(queries) {
-		GQL.run(queries).then(data =>
+		return GQL.run(queries).then(data =>
 			this.setState({
 				organization: new Organization(data.organization),
 				reports: data.reports,
@@ -166,7 +158,7 @@ class OrganizationShow extends Page {
 		const reports = this.state.reports
 		const tasks = this.state.tasks
 
-		const currentUser = this.context.currentUser
+		const { currentUser } = this.props
 		const isSuperUser = currentUser && currentUser.isSuperUserForOrg(org)
 		const isAdmin = currentUser && currentUser.isAdmin()
 		const isPrincipalOrg = org.type === Organization.TYPE.PRINCIPAL_ORG
@@ -282,8 +274,12 @@ class OrganizationShow extends Page {
 
 }
 
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
+const OrganizationShow = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BaseOrganizationShow currentUser={context.currentUser} {...props} />
+		}
+	</AppContext.Consumer>
+)
 
 export default connect(null, mapDispatchToProps)(OrganizationShow)

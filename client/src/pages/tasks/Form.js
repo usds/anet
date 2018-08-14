@@ -15,12 +15,14 @@ import DictionaryField from '../../HOC/DictionaryField'
 
 import Settings from 'Settings'
 import API from 'api'
-import {Task, Position, Organization} from 'models'
+import {Organization, Person, Position, Task} from 'models'
 
 import CALENDAR_ICON from 'resources/calendar.png'
 
+import AppContext from 'components/AppContext'
 import { withRouter } from 'react-router-dom'
 import NavigationWarning from 'components/NavigationWarning'
+import { jumpToTop } from 'components/Page'
 
 const customEnumButtons = (list) => {
 	let buttons = []
@@ -33,14 +35,12 @@ const customEnumButtons = (list) => {
     return buttons
 }
 
-class TaskForm extends ValidatableFormWrapper {
+class BaseTaskForm extends ValidatableFormWrapper {
 	static propTypes = {
 		task: PropTypes.object.isRequired,
+		original: PropTypes.object.isRequired,
 		edit: PropTypes.bool,
-	}
-
-	static contextTypes = {
-		app: PropTypes.object.isRequired,
+		currentUser: PropTypes.instanceOf(Person),
 	}
 
 	constructor(props) {
@@ -58,8 +58,7 @@ class TaskForm extends ValidatableFormWrapper {
 	}
 
 	render() {
-		const {task, edit} = this.props
-		const {currentUser} = this.context.app.state
+		const { task, edit, currentUser } = this.props
 		const taskShortLabel = Settings.fields.task.shortLabel
 		const customFieldRef1 = Settings.fields.task.customFieldRef1
 		const customFieldEnum1 = Settings.fields.task.customFieldEnum1
@@ -159,24 +158,22 @@ class TaskForm extends ValidatableFormWrapper {
 	@autobind
 	onChange() {
 		this.setState({
-			isBlocking: this.formHasUnsavedChanges(this.state.report, this.props.original),
+			isBlocking: this.formHasUnsavedChanges(this.props.task, this.props.original),
 		})
-		this.forceUpdate()
 	}
 
 	@autobind
 	onSubmit(event) {
 		let {task, edit} = this.props
-		if (task.responsibleOrg && task.responsibleOrg.id) {
+		if (task.responsibleOrg) {
 			task.responsibleOrg = {id: task.responsibleOrg.id}
 		}
-		if (task.customFieldRef1 && task.customFieldRef1.id) {
+		if (task.customFieldRef1) {
 			task.customFieldRef1 = {id: task.customFieldRef1.id}
 		}
 
 		let url = `/api/tasks/${edit ? 'update' : 'new'}`
 		this.setState({isBlocking: false})
-		this.forceUpdate()
 		API.send(url, task, {disableSubmits: true})
 			.then(response => {
 				if (response.code) {
@@ -195,9 +192,17 @@ class TaskForm extends ValidatableFormWrapper {
 				})
 			}).catch(error => {
 				this.setState({error: error})
-				window.scrollTo(0, 0)
+				jumpToTop()
 			})
 	}
 }
+
+const TaskForm = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BaseTaskForm currentUser={context.currentUser} {...props} />
+		}
+	</AppContext.Consumer>
+)
 
 export default withRouter(TaskForm)

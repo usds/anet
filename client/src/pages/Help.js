@@ -1,12 +1,14 @@
 import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 
 import Fieldset from 'components/Fieldset'
 
+import Settings from 'Settings'
 import API from 'api'
+import {Person, Position} from 'models'
 
-import { setPageProps } from 'actions'
+import AppContext from 'components/AppContext'
 import { connect } from 'react-redux'
 
 import TOUR_SCREENSHOT from 'resources/tour-screenshot.png'
@@ -16,12 +18,11 @@ const screenshotCss = {
 	boxShadow: "0px 0px 10px #aaa",
 }
 
-class Help extends Page {
+class BaseHelp extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
-
-	static contextTypes = {
-		app: PropTypes.object.isRequired,
+	static propTypes = {
+		...pagePropTypes,
+		currentUser: PropTypes.instanceOf(Person),
 	}
 
 	constructor(props) {
@@ -31,34 +32,34 @@ class Help extends Page {
 		}
 	}
 
-	fetchData() {
-		let {currentUser} = this.context.app.state
+	fetchData(props) {
+		const { currentUser } = props
 		if (!currentUser.id || !currentUser.position || !currentUser.position.organization) {
 			// No super users to be found
 			return
 		}
 
 		let orgId = currentUser.position.organization.id
-		API.query(/* GraphQL */`
-			positionList(f:search,query:{type:[SUPER_USER,ADMINISTRATOR],organizationId:${orgId}}) {
+		return API.query(/* GraphQL */`
+			positionList(f:search,query:{type:[${Position.TYPE.SUPER_USER},${Position.TYPE.ADMINISTRATOR}],status:${Position.STATUS.ACTIVE},organizationId:${orgId}}) {
 				list {
 					person { rank, name, emailAddress }
 				}
 			}
 		`).then(data => {
+			const filledPositions = data.positionList.list.filter(position => position && position.person)
 			this.setState({
-				superUsers: data.positionList.list.map(person => person.person)
+				superUsers: filledPositions.map(position => position.person)
 			})
 		})
 	}
 
 	render() {
-		let {settings} = this.context.app.state || {}
-		let url = settings.HELP_LINK_URL
-		let email = settings.CONTACT_EMAIL
+		const { appSettings } = this.props || {}
+		let url = appSettings.HELP_LINK_URL
+		let email = appSettings.CONTACT_EMAIL
 
-		let appData = this.context.app.state
-		let currentUser = appData.currentUser
+		const { currentUser } = this.props
 		return <div className="help-page">
 			<Fieldset title="Need help with ANET?">
 				<p className="help-text">There are a few ways to get help:</p>
@@ -68,7 +69,7 @@ class Help extends Page {
 				<img src={TOUR_SCREENSHOT} alt={"Screenshot of \"Guided Tour\" link"} style={screenshotCss} />
 
 				<h4>2. Email your super user</h4>
-				<p>Your organization's super users are able to modify a lot of data in the system regarding how your organization, position, principal, and profile are set up.</p>
+				<p>Your organization's super users are able to modify a lot of data in the system regarding how your organization, position, profile, and {Settings.fields.principal.person.name} are set up.</p>
 				<p>Your super users:</p>
 				<ul>
 					{this.state.superUsers.map(user =>
@@ -97,8 +98,12 @@ class Help extends Page {
 	}
 }
 
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
+const Help = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BaseHelp appSettings={context.appSettings} currentUser={context.currentUser} {...props} />
+		}
+	</AppContext.Consumer>
+)
 
 export default connect(null, mapDispatchToProps)(Help)

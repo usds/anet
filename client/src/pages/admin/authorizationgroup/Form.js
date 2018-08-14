@@ -9,9 +9,10 @@ import Messages from 'components/Messages'
 import ValidatableFormWrapper from 'components/ValidatableFormWrapper'
 import ButtonToggleGroup from 'components/ButtonToggleGroup'
 import PositionsSelector from 'components/PositionsSelector'
+import { jumpToTop } from 'components/Page'
 
 import API from 'api'
-import {AuthorizationGroup} from 'models'
+import {AuthorizationGroup, Position} from 'models'
 
 import { withRouter } from 'react-router-dom'
 import NavigationWarning from 'components/NavigationWarning'
@@ -19,6 +20,7 @@ import NavigationWarning from 'components/NavigationWarning'
 class AuthorizationGroupForm extends ValidatableFormWrapper {
 	static propTypes = {
 		authorizationGroup: PropTypes.object.isRequired,
+		original: PropTypes.object.isRequired,
 		edit: PropTypes.bool
 	}
 
@@ -61,6 +63,7 @@ class AuthorizationGroupForm extends ValidatableFormWrapper {
 						</Form.Field>
 						<PositionsSelector
 							positions={authorizationGroup.positions}
+							queryParams={{status: Position.STATUS.ACTIVE, type: [Position.TYPE.ADVISOR, Position.TYPE.SUPER_USER, Position.TYPE.ADMINISTRATOR]}}
 							onChange={this.onChange}
 							onErrorChange={this.onPositonError}
 							validationState={errors.positions} />
@@ -83,9 +86,8 @@ class AuthorizationGroupForm extends ValidatableFormWrapper {
 	@autobind
 	onChange() {
 		this.setState({
-			isBlocking: this.formHasUnsavedChanges(this.state.report, this.props.original),
+			isBlocking: this.formHasUnsavedChanges(this.props.authorizationGroup, this.props.original),
 		})
-		this.forceUpdate()
 	}
 
 	@autobind
@@ -94,7 +96,6 @@ class AuthorizationGroupForm extends ValidatableFormWrapper {
 		let edit = this.props.edit
 		let url = `/api/authorizationGroups/${edit ? 'update'  :'new'}`
 		this.setState({isBlocking: false})
-		this.forceUpdate()
 		API.send(url, authGroup, {disableSubmits: true})
 			.then(response => {
 				if (response.id) {
@@ -108,7 +109,7 @@ class AuthorizationGroupForm extends ValidatableFormWrapper {
 				})
 			}).catch(error => {
 				this.setState({error: error})
-				window.scrollTo(0, 0)
+				jumpToTop()
 			})
 	}
 

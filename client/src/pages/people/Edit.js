@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 import moment from 'moment'
 
 import PersonForm from './Form'
@@ -9,15 +9,15 @@ import Breadcrumbs from 'components/Breadcrumbs'
 import API from 'api'
 import {Person} from 'models'
 
-import { setPageProps, PAGE_PROPS_NO_NAV } from 'actions'
+import AppContext from 'components/AppContext'
+import { PAGE_PROPS_NO_NAV } from 'actions'
 import { connect } from 'react-redux'
 
-class PersonEdit extends Page {
+class BasePersonEdit extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
-
-	static contextTypes = {
-		currentUser: PropTypes.object.isRequired,
+	static propTypes = {
+		...pagePropTypes,
+		currentUser: PropTypes.instanceOf(Person),
 	}
 
 	static modelName = 'User'
@@ -26,12 +26,13 @@ class PersonEdit extends Page {
 		super(props, PAGE_PROPS_NO_NAV)
 
 		this.state = {
+			originalPerson: new Person(),
 			person: new Person(),
 		}
 	}
 
 	fetchData(props) {
-		API.query(/*GraphQL*/ `
+		return API.query(/*GraphQL*/ `
 			person(id:${props.match.params.id}) {
 				id,
 				name, rank, role, emailAddress, phoneNumber, status, domainUsername,
@@ -51,7 +52,7 @@ class PersonEdit extends Page {
 	render() {
 		let {person, originalPerson} = this.state
 
-		let currentUser = this.context.currentUser
+		const { currentUser } = this.props
 		let canEditPosition = currentUser && currentUser.isSuperUser()
 
 		const legendText = person.isNewUser() ? 'Create your account' : `Edit ${person.name}`
@@ -63,15 +64,24 @@ class PersonEdit extends Page {
 					<Breadcrumbs items={[[`Edit ${person.name}`, Person.pathForEdit(person)]]} />
 				}
 
-				<PersonForm original={originalPerson} person={person} edit showPositionAssignment={canEditPosition}
-					legendText={legendText} saveText={saveText} />
+				<PersonForm
+					original={originalPerson}
+					person={person}
+					edit
+					showPositionAssignment={canEditPosition}
+					legendText={legendText}
+					saveText={saveText} />
 			</div>
 		)
 	}
 }
 
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
+const PersonEdit = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BasePersonEdit currentUser={context.currentUser} {...props} />
+		}
+	</AppContext.Consumer>
+)
 
 export default connect(null, mapDispatchToProps)(PersonEdit)

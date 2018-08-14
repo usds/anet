@@ -1,6 +1,7 @@
 import React from 'react'
 
 import Model from 'components/Model'
+import LinkTo from 'components/LinkTo'
 import utils from 'utils'
 import Settings from 'Settings'
 
@@ -14,6 +15,7 @@ import _isEmpty from 'lodash/isEmpty'
 export default class Person extends Model {
 	static resourceName = 'Person'
 	static listName = 'personList'
+	static getInstanceName = 'person'
 
 	static STATUS = {
 		NEW_USER: 'NEW_USER',
@@ -46,7 +48,7 @@ export default class Person extends Model {
 	static autocompleteTemplate(person) {
 		return <span>
 			<img src={(new Person(person)).iconUrl()} alt={person.role} height={20} className="person-icon" />
-			{person.name} {person.rank && person.rank.toUpperCase()} - {person.position && `(${person.position.name})`}
+			<LinkTo person={person} isLink={false}/> - {person.position && `(${person.position.name})`}
 		</span>
 	}
 
@@ -138,9 +140,9 @@ export default class Person extends Model {
 		}
 	}
 
-	static fullName(person) {
+	static fullName(person, doTrim) {
 		if (person.lastName && person.firstName) {
-			return(`${Person.formattedLastName(person.lastName)}${Person.nameDelimiter} ${Person.formattedFirstName(person.firstName)}`)
+			return(`${Person.formattedLastName(person.lastName, doTrim)}${Person.nameDelimiter} ${Person.formattedFirstName(person.firstName, doTrim)}`)
 		}
 		else if (person.lastName) {
 			return Person.formattedLastName(person.lastName)
@@ -150,12 +152,20 @@ export default class Person extends Model {
 		}
 	}
 
-	static formattedLastName(lastName) {
-		return lastName.toUpperCase().trim()
+	static formattedLastName(lastName, doTrim) {
+		let r = lastName.toUpperCase()
+		if (doTrim) {
+			r = r.trim()
+		}
+		return r
 	}
 
-	static formattedFirstName(firstName) {
-		return firstName.trim()
+	static formattedFirstName(firstName, doTrim) {
+		let r = firstName
+		if (doTrim) {
+			r = r.trim()
+		}
+		return r
 	}
 
 	static parseFullName(name) {

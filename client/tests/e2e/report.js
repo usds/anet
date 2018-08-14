@@ -42,7 +42,7 @@ test('Draft and submit a report', async t => {
         'on', 
         'Principal primary attendee checkbox should be checked'
     )
-    await assertElementText(t, $principalName, 'TOPFERNESS, Christopf CIV')
+    await assertElementText(t, $principalName, 'CIV TOPFERNESS, Christopf')
     await assertElementText(t, $principalPosition, 'Planning Captain')
     await assertElementText(t, $principalOrg, 'MoD')
 
@@ -91,9 +91,9 @@ test('Draft and submit a report', async t => {
     )
 
     await t.context.get('/', 'rebecca')
-    let $homeTile = await $('.home-tile')
-    await t.context.driver.wait(until.elementIsVisible($homeTile))
-    await $homeTile.click()
+    let [$draftReports, $reportsPending, $orgReports, $upcomingEngagements] = await $$('.home-tile')
+    await t.context.driver.wait(until.elementIsVisible($reportsPending))
+    await $reportsPending.click()
 
     let $firstReadReportButton = await $('.read-report-button')
     let reportHref = await $firstReadReportButton.getAttribute('href')
@@ -282,7 +282,7 @@ test('Verify that validation and other reports/new interactions work', async t =
         'on', 
         'Advisor primary attendee checkbox should be checked'
     )
-    await assertElementText(t, $advisorName, 'ERINSON, Erin CIV')
+    await assertElementText(t, $advisorName, 'CIV ERINSON, Erin')
     await assertElementText(t, $advisorPosition, 'EF 2.2 Advisor D')
     await assertElementText(t, $advisorOrg, 'EF 2.2')
 

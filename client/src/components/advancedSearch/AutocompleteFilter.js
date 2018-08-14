@@ -1,8 +1,10 @@
 import PropTypes from 'prop-types'
 import React, { Component } from 'react'
 import autobind from 'autobind-decorator'
-import 'utils'
+import _isEqualWith from 'lodash/isEqualWith'
+import utils from 'utils'
 import Autocomplete from 'components/Autocomplete'
+import API from 'api'
 
 export default class AutocompleteFilter extends Component {
 	static propTypes = {
@@ -16,8 +18,15 @@ export default class AutocompleteFilter extends Component {
 		//queryParams: PropTypes.any,
 		onChange: PropTypes.func,
 
+		//Passed by the SearchFilterDisplay row
+		asFormField: PropTypes.bool,
+
 		//All other properties are passed directly to the Autocomplete.
 
+	}
+
+	static defaultProps = {
+		asFormField: true
 	}
 
 	constructor(props) {
@@ -26,27 +35,37 @@ export default class AutocompleteFilter extends Component {
 		this.state = {
 			value: props.value || {}
 		}
+	}
 
+	componentDidMount() {
 		this.updateFilter()
 	}
 
-	componentDidUpdate() {
-		this.updateFilter()
+	componentDidUpdate(prevProps, prevState) {
+		if (!_isEqualWith(prevProps.value, this.props.value, utils.treatFunctionsAsEqual)) {
+			this.setState({value: this.props.value}, this.updateFilter)
+		}
 	}
 
 	render() {
-		let autocompleteProps = Object.without(this.props, 'value', 'queryKey')
-
-		return <Autocomplete
-			{...autocompleteProps}
-			onChange={this.onChange}
-			value={this.state.value}
-		/>
+		let autocompleteProps = Object.without(this.props, 'value', 'queryKey', 'asFormField')
+		return (
+			!this.props.asFormField ?
+				<React.Fragment>{this.props.value[this.props.valueKey]}</React.Fragment>
+			:
+				<Autocomplete
+					{...autocompleteProps}
+					onChange={this.onChange}
+					value={this.state.value}
+				/>
+		)
 	}
 
 	@autobind
 	onChange(event) {
-		this.setState({value: event}, this.updateFilter)
+		if (typeof event === 'object') {
+			this.setState({value: event}, this.updateFilter)
+		}
 	}
 
 	@autobind
@@ -56,8 +75,35 @@ export default class AutocompleteFilter extends Component {
 
 	@autobind
 	updateFilter() {
-		let value = this.state.value
-		value.toQuery = this.toQuery
-		this.props.onChange(value)
+		if (this.props.asFormField) {
+			let {value} = this.state
+			value.toQuery = this.toQuery
+			this.props.onChange(value)
+		}
+	}
+
+	@autobind
+	deserialize(query, key) {
+		if (query[this.props.queryKey]) {
+			const getInstanceName = this.props.objectType.getInstanceName
+			const graphQlQuery = getInstanceName +
+				'(id:' + query[this.props.queryKey] + ') { ' + this.props.fields + '}'
+			return API.query(graphQlQuery).then(data => {
+				if (data[getInstanceName]) {
+					const toQueryValue = {[this.props.queryKey]: query[this.props.queryKey]}
+					return {
+						key: key,
+						value: {
+							...data[getInstanceName],
+							toQuery: () => toQueryValue
+						},
+					}
+				}
+				else {
+					return null
+				}
+			})
+		}
+		return null
 	}
 }

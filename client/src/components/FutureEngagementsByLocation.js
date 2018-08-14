@@ -9,7 +9,10 @@ import Fieldset from 'components/Fieldset'
 import ReportCollection from 'components/ReportCollection'
 import moment from 'moment'
 
-import LoaderHOC from '../HOC/LoaderHOC'
+import _isEqual from 'lodash/isEqual'
+
+import { connect } from 'react-redux'
+import LoaderHOC, {mapDispatchToProps} from 'HOC/LoaderHOC'
 
 const d3 = require('d3')
 const chartId = 'future_engagements_by_location'
@@ -18,16 +21,17 @@ const GQL_CHART_FIELDS =  /* GraphQL */`
   engagementDate
   location { id, name }
 `
-const BarChartWithLoader = LoaderHOC('isLoading')('data')(HorizontalBarChart)
+const BarChartWithLoader = connect(null, mapDispatchToProps)(LoaderHOC('isLoading')('data')(HorizontalBarChart))
 
 /*
  * Component displaying a chart with number of future engagements per date and
  * location. Locations are grouped per date.
  */
-export default class FutureEngagementsByLocation extends Component {
+class FutureEngagementsByLocation extends Component {
   static propTypes = {
-    startDate: PropTypes.object.isRequired,
-    endDate: PropTypes.object.isRequired,
+    queryParams: PropTypes.object,
+    showLoading: PropTypes.func.isRequired,
+    hideLoading: PropTypes.func.isRequired,
   }
 
   constructor(props) {
@@ -42,37 +46,24 @@ export default class FutureEngagementsByLocation extends Component {
     }
   }
 
-  get queryParams() {
-    return {
-      engagementDateStart: this.props.startDate.clone().startOf('day').valueOf(),
-      engagementDateEnd: this.props.endDate.valueOf(),
-    }
-  }
-
   get engagementDateRangeArray() {
     let dateArray = []
-    let currentDate = this.props.startDate.clone()
-    let endDate = this.props.endDate
+    let currentDate = moment(this.props.queryParams.engagementDateStart).clone()
+    let endDate = moment(this.props.queryParams.engagementDateEnd)
     while (currentDate <= endDate) {
-      dateArray.push(currentDate.clone().startOf('day'))
+      dateArray.push(currentDate.clone())
       currentDate = currentDate.add(1, 'days')
     }
     return dateArray
   }
 
-  get startDateLongStr() { return this.props.startDate.format('DD MMM YYYY') }
-
-  get endDateLongStr() { return this.props.endDate.format('DD MMM YYYY') }
-
   render() {
     const focusDetails = this.getFocusDetails()
     return (
       <div>
-        <p className="help-text">{`Number of engagements between ${this.startDateLongStr} and ${this.endDateLongStr}, grouped by date and location`}</p>
+        <p className="help-text">{`Grouped by date and location`}</p>
         <p className="chart-description">
-          {`Displays the number of engagements which have an engagement date
-            between ${this.startDateLongStr} and ${this.endDateLongStr}.
-            The engagements are grouped first by date and within the date per
+          {`The engagements are grouped first by date and within the date per
             location. In order to see the list of engagements for a date and
             location, click on the bar corresponding to the date and location.`}
         </p>
@@ -115,6 +106,7 @@ export default class FutureEngagementsByLocation extends Component {
 
   fetchData() {
     this.setState( {isLoading: true} )
+    this.props.showLoading()
     // Query used by the chart
     const chartQuery = this.runChartQuery(this.chartQueryParams())
     const noLocation = {
@@ -122,7 +114,7 @@ export default class FutureEngagementsByLocation extends Component {
       name: 'No location allocated'
     }
     Promise.all([chartQuery]).then(values => {
-      let reportsList = values[0].reportList.list
+      let reportsList = values[0].reportList.list || []
       reportsList = reportsList
         .map(d => { if (!d.location) d.location = noLocation; return d })
       // add days without data as we want to display them in the chart
@@ -162,14 +154,14 @@ export default class FutureEngagementsByLocation extends Component {
         graphData: graphData,
         isLoading: false
       })
+      this.props.hideLoading()
     })
     this.fetchFocusData()
-
   }
 
   fetchFocusData() {
     const reportsQueryParams = {}
-    Object.assign(reportsQueryParams, this.queryParams)
+    Object.assign(reportsQueryParams, this.props.queryParams)
     Object.assign(reportsQueryParams, {
       pageNum: this.state.reportsPageNum,
       pageSize: 10
@@ -201,7 +193,7 @@ export default class FutureEngagementsByLocation extends Component {
 
   chartQueryParams = () => {
     const chartQueryParams = {}
-    const queryParams = this.queryParams
+    const queryParams = this.props.queryParams
     Object.assign(chartQueryParams, queryParams)
     Object.assign(chartQueryParams, {
       pageSize: 0,  // retrieve all the filtered reports
@@ -253,25 +245,16 @@ export default class FutureEngagementsByLocation extends Component {
     this.fetchData()
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (this.datePropsChanged(nextProps)) {
+  componentDidUpdate(prevProps, prevState) {
+    if (!_isEqual(prevProps.queryParams, this.props.queryParams)) {
       this.setState({
         reportsPageNum: 0,
-        focusedDate: '',
+        focusedDate: '',  // reset focus when changing the queryParams
         focusedLocation: ''
-      })
+      }, () => this.fetchData())
     }
   }
 
-  componentDidUpdate(prevProps, prevState) {
-    if (this.datePropsChanged(prevProps)) {
-      this.fetchData()
-    }
-  }
-
-  datePropsChanged(otherProps) {
-    const startDateChanged = otherProps.startDate.valueOf() !== this.props.startDate.valueOf()
-    const endDateChanged = otherProps.endDate.valueOf() !== this.props.endDate.valueOf()
-    return startDateChanged || endDateChanged
-  }
 }
+
+export default connect(null, mapDispatchToProps)(FutureEngagementsByLocation)

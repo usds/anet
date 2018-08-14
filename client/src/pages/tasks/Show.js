@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 import autobind from 'autobind-decorator'
 
 import Fieldset from 'components/Fieldset'
@@ -13,20 +13,18 @@ import DictionaryField from '../../HOC/DictionaryField'
 
 import Settings from 'Settings'
 import GQL from 'graphqlapi'
-import {Task} from 'models'
+import {Person, Task} from 'models'
 
 import moment from 'moment'
 
-import { setPageProps } from 'actions'
+import AppContext from 'components/AppContext'
 import { connect } from 'react-redux'
 
-class TaskShow extends Page {
+class BaseTaskShow extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
-
-	static contextTypes = {
-		currentUser: PropTypes.object.isRequired,
-		app: PropTypes.object.isRequired,
+	static propTypes = {
+		...pagePropTypes,
+		currentUser: PropTypes.instanceOf(Person),
 	}
 
 	static modelName = 'Task'
@@ -76,7 +74,7 @@ class TaskShow extends Page {
 			}
 		`)
 
-		GQL.run([reportsQuery, taskQuery]).then(data => {
+		return GQL.run([reportsQuery, taskQuery]).then(data => {
             this.setState({
                 task: new Task(data.task),
 				reports: data.reports,
@@ -87,7 +85,7 @@ class TaskShow extends Page {
 	render() {
 		let {task, reports} = this.state
 		// Admins can edit tasks, or super users if this task is assigned to their org.
-		let currentUser = this.context.currentUser
+		const { currentUser } = this.props
 
 		const taskShortLabel = Settings.fields.task.shortLabel
 
@@ -148,8 +146,12 @@ class TaskShow extends Page {
 	}
 }
 
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
+const TaskShow = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BaseTaskShow currentUser={context.currentUser} {...props} />
+		}
+	</AppContext.Consumer>
+)
 
 export default connect(null, mapDispatchToProps)(TaskShow)

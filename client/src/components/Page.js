@@ -7,32 +7,65 @@ import NotFound from 'components/NotFound'
 import {setMessages} from 'components/Messages'
 
 import API from 'api'
+import _isEqualWith from 'lodash/isEqualWith'
+import utils from 'utils'
 
-import NProgress from 'nprogress'
-import 'nprogress/nprogress.css'
+import { showLoading, hideLoading } from 'react-redux-loading-bar'
+import { animateScroll, Link } from 'react-scroll'
+import { setPageProps, setSearchProps, setSearchQuery, clearSearchQuery, DEFAULT_PAGE_PROPS, DEFAULT_SEARCH_PROPS} from 'actions'
 
-import _isEqual from 'lodash/isEqual'
+export const mapDispatchToProps = (dispatch, ownProps) => ({
+	showLoading: () => dispatch(showLoading()),
+	hideLoading: () => dispatch(hideLoading()),
+	setPageProps: pageProps => dispatch(setPageProps(pageProps)),
+	setSearchProps: searchProps => dispatch(setSearchProps(searchProps)),
+	setSearchQuery: searchQuery => dispatch(setSearchQuery(searchQuery)),
+	clearSearchQuery: () => dispatch(clearSearchQuery()),
+})
 
-import { DEFAULT_PAGE_PROPS } from 'actions'
-
-const NPROGRESS_CONTAINER = '.header'
-
-if (process.env.NODE_ENV !== 'test') {
-	NProgress.configure({
-		parent: NPROGRESS_CONTAINER
-	})
+export const propTypes = {
+	showLoading: PropTypes.func.isRequired,
+	hideLoading: PropTypes.func.isRequired,
+	setPageProps: PropTypes.func.isRequired,
+	setSearchProps: PropTypes.func.isRequired,
+	setSearchQuery: PropTypes.func.isRequired,
+	onSearchGoToSearchPage: PropTypes.bool,
+	searchQuery: PropTypes.shape({
+		text: PropTypes.string,
+		filters: PropTypes.any,
+		objectType: PropTypes.string
+	}),
+	clearSearchQuery: PropTypes.func.isRequired,
 }
+
+export const AnchorLink = function(props) {
+	const {to, ...remainingProps} = props
+	return <Link to={to} smooth={true} duration={500} containerId="main-viewport" {...remainingProps}>{props.children}</Link>
+}
+
+
+export function jumpToTop() {
+	animateScroll.scrollToTop({
+		duration: 500,
+		delay: 100,
+		smooth: "easeInOutQuint",
+		containerId: "main-viewport"})
+	}
 
 export default class Page extends Component {
 
-	static propTypes = {
-		setPageProps: PropTypes.func.isRequired,
-	}
-
-	constructor(props, pageProps) {
+	constructor(props, pageProps, searchProps) {
 		super(props)
+		const pp = pageProps || DEFAULT_PAGE_PROPS
+		const sp = searchProps || DEFAULT_SEARCH_PROPS
 		if (typeof props.setPageProps === 'function') {
-			props.setPageProps(pageProps || DEFAULT_PAGE_PROPS)
+			props.setPageProps(pp)
+		}
+		if (typeof props.setSearchProps === 'function') {
+			props.setSearchProps(sp)
+		}
+		if (typeof props.clearSearchQuery === 'function' && sp.clearSearchQuery) {
+			props.clearSearchQuery()
 		}
 
 		this.state = {
@@ -44,26 +77,19 @@ export default class Page extends Component {
 		this.render = Page.prototype.render
 	}
 
-	componentWillMount() {
-		window.scrollTo(0,0)
-
-		if (document.querySelector(NPROGRESS_CONTAINER)) {
-			NProgress.start()
-		}
-	}
-
-	loadData(props, context) {
+	@autobind
+	loadData() {
 		this.setState({notFound: false, invalidRequest: false})
 
 		if (this.fetchData) {
 			document.body.classList.add('loading')
+			if (typeof this.props.showLoading === 'function') {
+				this.props.showLoading()
+			}
 
-			this.fetchData(props || this.props, context || this.context)
-
-			let promise = API.inProgress
+			const promise = this.fetchData(this.props)
 
 			if (promise && promise.then instanceof Function) {
-				NProgress.set(0.5)
 				promise.then(this.doneLoading, this.doneLoading)
 			} else {
 				this.doneLoading()
@@ -77,7 +103,9 @@ export default class Page extends Component {
 
 	@autobind
 	doneLoading(response) {
-		NProgress.done()
+		if (typeof this.props.hideLoading === 'function') {
+			this.props.hideLoading()
+		}
 		document.body.classList.remove('loading')
 
 		if (response) {
@@ -103,28 +131,56 @@ export default class Page extends Component {
 		return this.renderPage()
 	}
 
-	componentWillReceiveProps(nextProps, nextContext) {
-		// Location always has a new key. In order to check whether the location
-		// really changed filter out the key.
-		const locationFilterProps = ['key']
-		const nextPropsFilteredLocation = Object.without(nextProps.location, ...locationFilterProps)
-		const propsFilteredLocation = Object.without(this.props.location, ...locationFilterProps)
+	componentDidUpdate(prevProps, prevState) {
 		// Filter out React Router props before comparing; for the property names,
 		// see https://github.com/ReactTraining/react-router/issues/4424#issuecomment-285809552
-		const routerProps = ['match', 'location', 'history']
-		const filteredNextProps = Object.without(nextProps, ...routerProps)
-		const filteredProps = Object.without(this.props, ...routerProps)
-		if (!_isEqual(filteredProps, filteredNextProps)) {
-			this.loadData(nextProps, nextContext)
-		} else if (!_isEqual(propsFilteredLocation, nextPropsFilteredLocation)) {
-			this.loadData(nextProps, nextContext)
-		} else if (!_isEqual(this.context, nextContext)) {
-			this.loadData(nextProps, nextContext)
+		const propFilter = ['match', 'location', 'history']
+		// Also filter out generic pageProps
+		propFilter.push('pageProps')
+		const filteredNextProps = Object.without(this.props, ...propFilter)
+		const filteredProps = Object.without(prevProps, ...propFilter)
+		if (!_isEqualWith(filteredProps, filteredNextProps, utils.treatFunctionsAsEqual)) {
+			this.loadData()
+		} else {
+			// Location always has a new key. In order to check whether the location
+			// really changed filter out the key.
+			const locationFilterProps = ['key']
+			const nextPropsFilteredLocation = Object.without(this.props.location, ...locationFilterProps)
+			const propsFilteredLocation = Object.without(prevProps.location, ...locationFilterProps)
+			if (!_isEqualWith(propsFilteredLocation, nextPropsFilteredLocation, utils.treatFunctionsAsEqual)) {
+				this.loadData()
+			}
 		}
 	}
 
 	componentDidMount() {
 		setMessages(this.props, this.state)
-		this.loadData(this.props)
+		this.loadData()
 	}
+
+	@autobind
+	getSearchQuery(props) {
+		let {searchQuery} = props || this.props
+		let query = {text: searchQuery.text}
+		if (searchQuery.filters) {
+			searchQuery.filters.forEach(filter => {
+				if (filter.value) {
+					if (filter.value.toQuery) {
+						const toQuery = typeof filter.value.toQuery === 'function'
+							? filter.value.toQuery()
+							: filter.value.toQuery
+						Object.assign(query, toQuery)
+					} else {
+						query[filter.key] = filter.value
+					}
+				}
+			})
+		}
+		console.log('SEARCH advanced query', query)
+
+		return query
+	}
+
 }
+
+Page.propTypes = propTypes

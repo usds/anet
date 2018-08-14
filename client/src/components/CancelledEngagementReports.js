@@ -11,7 +11,11 @@ import ReportCollection from 'components/ReportCollection'
 
 import {Report} from 'models'
 
-import LoaderHOC from '../HOC/LoaderHOC'
+import _isEqual from 'lodash/isEqual'
+
+import { connect } from 'react-redux'
+import LoaderHOC, {mapDispatchToProps} from 'HOC/LoaderHOC'
+import { showLoading, hideLoading } from 'react-redux-loading-bar'
 
 const d3 = require('d3')
 const chartByOrgId = 'cancelled_reports_by_org'
@@ -21,15 +25,17 @@ const GQL_CHART_FIELDS =  /* GraphQL */`
   advisorOrg { id, shortName }
   cancelledReason
 `
-const BarChartWithLoader = LoaderHOC('isLoading')('data')(BarChart)
+const BarChartWithLoader = connect(null, mapDispatchToProps)(LoaderHOC('isLoading')('data')(BarChart))
 
 /*
  * Component displaying a chart with reports cancelled since
  * the given date.
  */
-export default class CancelledEngagementReports extends Component {
+class CancelledEngagementReports extends Component {
   static propTypes = {
-    date: PropTypes.object,
+    queryParams: PropTypes.object,
+    showLoading: PropTypes.func.isRequired,
+    hideLoading: PropTypes.func.isRequired,
   }
 
   constructor(props) {
@@ -45,26 +51,15 @@ export default class CancelledEngagementReports extends Component {
     }
   }
 
-  get queryParams() {
-    return {
-      state: [Report.STATE.CANCELLED],
-      releasedAtStart: this.props.date.valueOf(),
-    }
-  }
-
-  get referenceDateLongStr() { return this.props.date.format('DD MMM YYYY') }
-
   render() {
     const focusDetails = this.getFocusDetails()
     return (
       <div>
-        <p className="help-text">{`Number of cancelled engagement reports released since ${this.referenceDateLongStr}, grouped by advisor organization`}</p>
+        <p className="help-text">{`Grouped by ${Settings.fields.advisor.org.name}`}</p>
         <p className="chart-description">
-          {`Displays the number of cancelled engagement reports released since
-            ${this.referenceDateLongStr}. The reports are grouped by advisor
-            organization. In order to see the list of cancelled engagement
-            reports for an organization, click on the bar corresponding to the
-            organization.`}
+          {`The reports are grouped by ${Settings.fields.advisor.org.name}. In order to see the
+            list of cancelled engagement reports for an organization, click on
+            the bar corresponding to the organization.`}
         </p>
         <BarChartWithLoader
           chartId={chartByOrgId}
@@ -75,12 +70,12 @@ export default class CancelledEngagementReports extends Component {
           onBarClick={this.goToOrg}
           updateChart={this.state.updateChart}
           isLoading={this.state.isLoading} />
-        <p className="help-text">{`Number of cancelled engagement reports since ${this.referenceDateLongStr}, grouped by reason for cancellation`}</p>
+        <p className="help-text">{`Grouped by reason for cancellation`}</p>
         <p className="chart-description">
-          {`Displays the number of cancelled engagement reports released since
-            ${this.referenceDateLongStr}. The reports are grouped by reason for cancellation. In order to see the list of cancelled engagement
-            reports for a reason for cancellation, click on the bar corresponding
-            to the reason for cancellation.`}
+          {`The reports are grouped by reason for cancellation. In order to see
+            the list of cancelled engagement reports for a reason for
+            cancellation, click on the bar corresponding to the reason for
+            cancellation.`}
         </p>
         <BarChartWithLoader
           chartId={chartByReasonId}
@@ -104,10 +99,10 @@ export default class CancelledEngagementReports extends Component {
   }
 
   getReasonDisplayName(reason) {
-    return reason.replace("CANCELLED_", "")
+    return reason ? reason.replace("CANCELLED_", "")
       .replace(/_/g, " ")
       .toLocaleLowerCase()
-      .replace(/(\b\w)/gi, function(m) {return m.toUpperCase()})
+      .replace(/(\b\w)/gi, function(m) {return m.toUpperCase()}) : ''
   }
 
   getFocusDetails() {
@@ -133,9 +128,10 @@ export default class CancelledEngagementReports extends Component {
 
   fetchData() {
     this.setState( {isLoading: true} )
+    this.props.showLoading()
     const pinned_ORGs = Settings.pinned_ORGs
     const chartQueryParams = {}
-    Object.assign(chartQueryParams, this.queryParams)
+    Object.assign(chartQueryParams, this.props.queryParams)
     Object.assign(chartQueryParams, {
       pageSize: 0,  // retrieve all the filtered reports
     })
@@ -149,10 +145,10 @@ export default class CancelledEngagementReports extends Component {
       `, {chartQueryParams}, '($chartQueryParams: ReportSearchQuery)')
     const noAdvisorOrg = {
       id: -1,
-      shortName: 'No advisor organization'
+      shortName: `No ${Settings.fields.advisor.org.name}`
     }
     Promise.all([chartQuery]).then(values => {
-      let reportsList = values[0].reportList.list
+      let reportsList = values[0].reportList.list || []
       reportsList = reportsList
         .map(d => { if (!d.advisorOrg) d.advisorOrg = noAdvisorOrg; return d })
       this.setState({
@@ -177,13 +173,14 @@ export default class CancelledEngagementReports extends Component {
             return a.reason.localeCompare(b.reason)
         })
       })
+      this.props.hideLoading()
     })
     this.fetchOrgData()
   }
 
   fetchOrgData() {
     const reportsQueryParams = {}
-    Object.assign(reportsQueryParams, this.queryParams)
+    Object.assign(reportsQueryParams, this.props.queryParams)
     Object.assign(reportsQueryParams, {
       pageNum: this.state.reportsPageNum,
       pageSize: 10
@@ -209,7 +206,7 @@ export default class CancelledEngagementReports extends Component {
 
   fetchReasonData() {
     const reportsQueryParams = {}
-    Object.assign(reportsQueryParams, this.queryParams)
+    Object.assign(reportsQueryParams, this.props.queryParams)
     Object.assign(reportsQueryParams, {
       pageNum: this.state.reportsPageNum,
       pageSize: 10
@@ -269,23 +266,15 @@ export default class CancelledEngagementReports extends Component {
     }
   }
 
-  componentWillReceiveProps(nextProps, nextContext) {
-    if (nextProps.date.valueOf() !== this.props.date.valueOf()) {
+  componentDidUpdate(prevProps, prevState) {
+    if (!_isEqual(prevProps.queryParams, this.props.queryParams)) {
       this.setState({
         reportsPageNum: 0,
-        focusedReason: '',
+        focusedReason: '',  // reset focus when changing the queryParams
         focusedOrg: ''
-      })  // reset focus when changing the date
-    }
-  }
-
-  componentDidMount() {
-    this.fetchData()
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    if (prevProps.date.valueOf() !== this.props.date.valueOf()) {
-      this.fetchData()
+      }, () => this.fetchData())
     }
   }
 }
+
+export default connect(null, mapDispatchToProps)(CancelledEngagementReports)

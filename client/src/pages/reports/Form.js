@@ -27,23 +27,28 @@ import LOCATION_ICON from 'resources/locations.png'
 import REMOVE_ICON from 'resources/delete.png'
 import WARNING_ICON from 'resources/warning.png'
 
+import AppContext from 'components/AppContext'
 import { withRouter } from 'react-router-dom'
 import NavigationWarning from 'components/NavigationWarning'
 
-class ReportForm extends ValidatableFormWrapper {
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import 'components/reactToastify.css'
+import { jumpToTop } from 'components/Page'
+
+class BaseReportForm extends ValidatableFormWrapper {
 	static propTypes = {
 		report: PropTypes.instanceOf(Report).isRequired,
+		original: PropTypes.object.isRequired,
 		edit: PropTypes.bool,
 		onDelete: PropTypes.oneOfType([PropTypes.object, PropTypes.bool]),
-	}
-
-	static contextTypes = {
-		currentUser: PropTypes.object,
+		currentUser: PropTypes.instanceOf(Person),
 	}
 
 	constructor(props) {
 		super(props)
 
+		const { report, currentUser } = props
 		this.state = {
 			isBlocking: false,
 			recents: {
@@ -52,22 +57,21 @@ class ReportForm extends ValidatableFormWrapper {
 				tasks: [],
 				authorizationGroups: [],
 			},
-			reportTags: [],
+			reportTags: (report.tags || []).map(tag => ({id: tag.id.toString(), text: tag.name})),
 			suggestionList: [],
 
-			showReportText: false,
-			isCancelled: (props.report.cancelledReason ? true : false),
+			showReportText: !!report.reportText || !!report.reportSensitiveInformation,
+			isCancelled: !!report.cancelledReason,
 			errors: {},
 
-			showAssignedPositionWarning: false,
-			showActivePositionWarning: false,
+			showAssignedPositionWarning: !currentUser.hasAssignedPosition(),
+			showActivePositionWarning: currentUser.hasAssignedPosition() && !currentUser.hasActivePosition(),
+
 			disableOnSubmit: false,
 
 			//State for auto-saving reports
 			reportChanged: false, //Flag to determine if we need to auto-save.
 			timeoutId: null,
-			showAutoSaveBanner: false,
-			autoSaveError: null,
 		}
 		this.defaultTimeout = moment.duration(30, 'seconds')
 		this.autoSaveTimeout = this.defaultTimeout.clone()
@@ -112,21 +116,29 @@ class ReportForm extends ValidatableFormWrapper {
 		window.clearTimeout(this.state.timeoutId)
 	}
 
-
-	componentWillReceiveProps(nextProps) {
-		const { currentUser } = this.context
-		this.setState({showAssignedPositionWarning: !currentUser.hasAssignedPosition()})
-		this.setState({showActivePositionWarning: currentUser.hasAssignedPosition() && !currentUser.hasActivePosition()})
-
-		let report = nextProps.report
-		if (report.cancelledReason) {
-			this.setState({isCancelled: true})
+	componentDidUpdate(prevProps, prevState) {
+		const { report, currentUser } = this.props
+		const prevReport = prevProps.report
+		const prevCurrentUser = prevProps.currentUser
+		if (report.id !== prevReport.id) {
+			this.setState({reportTags: (report.tags || []).map(tag => ({id: tag.id.toString(), text: tag.name}))})
 		}
-		const reportTags = report.tags.map(tag => ({id: tag.id.toString(), text: tag.name}))
-		this.setState({
-			reportTags: reportTags,
-			showReportText: !!report.reportText || !!report.reportSensitiveInformation
-		})
+		const showReportText = !!report.reportText || !!report.reportSensitiveInformation
+		const prevShowReportText = !!prevReport.reportText || !!prevReport.reportSensitiveInformation
+		if (showReportText !== prevShowReportText) {
+			this.setState({showReportText: showReportText})
+		}
+		const isCancelled = !!report.cancelledReason
+		const prevIsCancelled = !!prevReport.cancelledReason
+		if (isCancelled !== prevIsCancelled) {
+			this.setState({isCancelled: isCancelled})
+		}
+		if (currentUser !== prevCurrentUser) {
+			this.setState({
+				showAssignedPositionWarning: !currentUser.hasAssignedPosition(),
+				showActivePositionWarning: currentUser.hasAssignedPosition() && !currentUser.hasActivePosition(),
+			})
+		}
 	}
 
 	@autobind
@@ -157,10 +169,9 @@ class ReportForm extends ValidatableFormWrapper {
 	}
 
 	render() {
-		const { currentUser } = this.context
-		const {report, onDelete} = this.props
+		const { report, onDelete, currentUser } = this.props
 		const { edit } = this.props
-		const {recents, suggestionList, errors, isCancelled, showAutoSaveBanner, autoSaveError, showAssignedPositionWarning, showActivePositionWarning} = this.state
+		const {recents, suggestionList, errors, isCancelled, showAssignedPositionWarning, showActivePositionWarning} = this.state
 
 		const hasErrors = Object.keys(errors).length > 0
 		const isFuture = report.engagementDate && moment().endOf("day").isBefore(report.engagementDate)
@@ -180,33 +191,24 @@ class ReportForm extends ValidatableFormWrapper {
 
 		const supportEmail = Settings.SUPPORT_EMAIL_ADDR
 		const supportEmailMessage = supportEmail ? `at ${supportEmail}` : ''
+		const advisorPositionSingular = Settings.fields.advisor.position.name
 		return <div className="report-form">
 			<NavigationWarning isBlocking={this.state.isBlocking} />
 
-			<Collapse in={showAutoSaveBanner}>
-				{(autoSaveError &&
-					<div className="alert alert-warning" style={alertStyle}>
-						{autoSaveError}
-					</div>
-				) || (
-					<div className="alert alert-success" style={alertStyle}>
-						Your report has been automatically saved
-					</div>
-				)}
-			</Collapse>
+			<ToastContainer />
 
 			{showAssignedPositionWarning &&
 				<div className="alert alert-warning" style={alertStyle}>
-					You cannot submit a report: you are not assigned to an advisor position.<br/>
-					Please contact your organization's super user(s) and request to be assigned to an advisor position.<br/>
+					You cannot submit a report: you are not assigned to a {advisorPositionSingular} position.<br/>
+					Please contact your organization's super user(s) and request to be assigned to a {advisorPositionSingular} position.<br/>
 					If you are unsure, you can also contact the support team {supportEmailMessage}.
 				</div>
 			}
 
 			{showActivePositionWarning &&
 				<div className="alert alert-warning" style={alertStyle}>
-					You cannot submit a report: your assigned advisor position has an inactive status.<br/>
-					Please contact your organization's super users and request them to assign you to an active advisor position.<br/>
+					You cannot submit a report: your assigned {advisorPositionSingular} position has an inactive status.<br/>
+					Please contact your organization's super users and request them to assign you to an active {advisorPositionSingular} position.<br/>
 					If you are unsure, you can also contact the support team {supportEmailMessage}.
 				</div>
 			}
@@ -270,8 +272,8 @@ class ReportForm extends ValidatableFormWrapper {
 
 					{isCancelled &&
 						<Form.Field id="cancelledReason" componentClass="select" className="cancelled-reason-form-group">
-							<option value="CANCELLED_BY_ADVISOR">Cancelled by Advisor</option>
-							<option value="CANCELLED_BY_PRINCIPAL">Cancelled by Principal</option>
+							<option value="CANCELLED_BY_ADVISOR">Cancelled by {Settings.fields.advisor.person.name}</option>
+							<option value="CANCELLED_BY_PRINCIPAL">Cancelled by {Settings.fields.principal.person.name}</option>
 							<option value="CANCELLED_DUE_TO_TRANSPORTATION">Cancelled due to Transportation</option>
 							<option value="CANCELLED_DUE_TO_FORCE_PROTECTION">Cancelled due to Force Protection</option>
 							<option value="CANCELLED_DUE_TO_ROUTES">Cancelled due to Routes</option>
@@ -339,7 +341,7 @@ class ReportForm extends ValidatableFormWrapper {
 							<Form.Field.ExtraCol className="shortcut-list">
 								<h5>Recent attendees</h5>
 								{Person.map(recents.persons, person =>
-									<Button key={person.id} bsStyle="link" onClick={this.addAttendee.bind(this, person)}>Add {person.name} {person.rank}</Button>
+									<Button key={person.id} bsStyle="link" onClick={this.addAttendee.bind(this, person)}>Add <LinkTo person={person} isLink={false}/></Button>
 								)}
 							</Form.Field.ExtraCol>
 						}
@@ -352,7 +354,7 @@ class ReportForm extends ValidatableFormWrapper {
 						onChange={this.onChange}
 						onErrorChange={this.onTaskError}
 						validationState={errors.tasks}
-						optional={true} />
+						optional={false} />
 				}
 
 				<Fieldset title={!isCancelled ? "Meeting discussion" : "Next steps and details"}>
@@ -451,11 +453,10 @@ class ReportForm extends ValidatableFormWrapper {
 
 			<td id={"attendeeName_" + person.role + "_" + idx} >
 				<img src={person.iconUrl()} alt={person.role} height={20} className="person-icon" />
-				{person.name} {person.rank && person.rank.toUpperCase()}
+				<LinkTo person={person}/>
 			</td>
 			<td><LinkTo position={person.position} /></td>
-			<td>{person.position && person.position.organization && person.position.organization.shortName}</td>
-
+			<td><LinkTo whenUnspecified="" organization={person.position && person.position.organization} /> </td>
 			<td onClick={this.removeAttendee.bind(this, person)} id={'attendeeDelete_' + person.role + "_" + idx} >
 				<span style={{cursor: 'pointer'}}><img src={REMOVE_ICON} height={14} alt="Remove attendee" /></span>
 			</td>
@@ -525,9 +526,8 @@ class ReportForm extends ValidatableFormWrapper {
 		this.setState({
 			errors : this.validateReport(),
 			reportChanged: true,
-			isBlocking: this.formHasUnsavedChanges(this.state.report, this.props.original),
+			isBlocking: this.formHasUnsavedChanges(this.props.report, this.props.original),
 		})
-		this.forceUpdate()
 	}
 
 	@autobind
@@ -558,6 +558,10 @@ class ReportForm extends ValidatableFormWrapper {
 			Object.without(a, 'position')
 		)
 
+		if (report.location) {
+			report.location = {id: report.location.id}
+		}
+
 		if (!isCancelled) {
 			delete report.cancelledReason
 		}
@@ -565,7 +569,6 @@ class ReportForm extends ValidatableFormWrapper {
 		if (disableSubmits) {
 			this.setState({disableOnSubmit: disableSubmits})
 		}
-
 		let url = `/api/reports/${edit ? 'update' : 'new'}?sendEditEmail=${disableSubmits}`
 		return API.send(url, report, {disableSubmits})
 	}
@@ -573,7 +576,6 @@ class ReportForm extends ValidatableFormWrapper {
 	@autobind
 	onSubmit(event) {
 		this.setState({isBlocking: false})
-		this.forceUpdate()
 		this.saveReport(true)
 			.then(response => {
 				if (response.id) {
@@ -598,7 +600,7 @@ class ReportForm extends ValidatableFormWrapper {
 					error: {message: response.message || response.error},
 					disableOnSubmit: false
 				})
-				window.scrollTo(0, 0)
+				jumpToTop()
 			})
 	}
 
@@ -622,29 +624,29 @@ class ReportForm extends ValidatableFormWrapper {
 					// Reset the reportChanged state, yes this could drop a few keystrokes that
 					// the user made while we were saving, but that's not a huge deal.
 					this.autoSaveTimeout = this.defaultTimeout.clone() // reset to default
-					this.setState({autoSavedAt: moment(), reportChanged: false, showAutoSaveBanner: true, autoSaveError: null})
-					// Hide the auto-save banner after a while
-					window.setTimeout(this.hideAutoSaveBanner, 5000)
+					this.setState({autoSavedAt: moment(), reportChanged: false})
+					toast.success('Your report has been automatically saved')
 					// And re-schedule the auto-save timer
 					let timeoutId = window.setTimeout(this.autoSave, this.autoSaveTimeout.asMilliseconds())
 					this.setState({timeoutId})
 				}).catch(response => {
 					// Show an error message
 					this.autoSaveTimeout.add(this.autoSaveTimeout) // exponential back-off
-					this.setState({showAutoSaveBanner: true, autoSaveError: "There was an error autosaving your report; we'll try again in " + this.autoSaveTimeout.humanize()})
-					// Hide the auto-save banner after a while
-					window.setTimeout(this.hideAutoSaveBanner, 5000)
+					toast.error("There was an error autosaving your report; we'll try again in " + this.autoSaveTimeout.humanize())
 					// And re-schedule the auto-save timer
 					let timeoutId = window.setTimeout(this.autoSave, this.autoSaveTimeout.asMilliseconds())
 					this.setState({timeoutId})
 				})
 		}
 	}
-
-	@autobind
-	hideAutoSaveBanner() {
-		this.setState({showAutoSaveBanner: false})
-	}
 }
+
+const ReportForm = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BaseReportForm currentUser={context.currentUser} {...props} />
+		}
+	</AppContext.Consumer>
+)
 
 export default withRouter(ReportForm)

@@ -1,6 +1,5 @@
-import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, jumpToTop, propTypes as pagePropTypes} from 'components/Page'
 import autobind from 'autobind-decorator'
 
 import Breadcrumbs from 'components/Breadcrumbs'
@@ -11,17 +10,17 @@ import LinkTo from 'components/LinkTo'
 import moment from 'moment'
 import Messages from 'components/Messages'
 
+import Settings from 'Settings'
 import {Person} from 'models'
 
 import API from 'api'
 
 import { withRouter } from 'react-router-dom'
-import { setPageProps } from 'actions'
 import { connect } from 'react-redux'
 
 class MergePeople extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
+	static propTypes = {...pagePropTypes}
 
 	constructor(props) {
 		super(props)
@@ -80,12 +79,12 @@ class MergePeople extends Page {
 					<Row>
 						<Col md={6}>
 							{loser.id &&
-								<fieldset>{this.showPersonDetails(loser)}</fieldset>
+								<fieldset>{this.showPersonDetails(new Person(loser))}</fieldset>
 							}
 						</Col>
 						<Col md={6}>
 							{winner.id &&
-								<fieldset>{this.showPersonDetails(winner)}</fieldset>
+								<fieldset>{this.showPersonDetails(new Person(winner))}</fieldset>
 							}
 						</Col>
 					</Row>
@@ -153,7 +152,7 @@ class MergePeople extends Page {
 			errors.push("You selected the same person twice!")
 		}
 		if (winner.role !== loser.role) {
-			errors.push("You can only merge people of the same Role (ie ADVISOR/PRINCIPAL)")
+			errors.push(`You can only merge people of the same Role (i.e. ${Settings.fields.advisor.person.name}/${Settings.fields.principal.person.name})`)
 		}
 
 		return errors
@@ -165,8 +164,8 @@ class MergePeople extends Page {
 		return <Form static formFor={person} >
 			<Form.Field id="id" />
 			<Form.Field id="name" />
-			<Form.Field id="status" />
-			<Form.Field id="role" />
+			<Form.Field id="status">{person.humanNameOfStatus()}</Form.Field>
+			<Form.Field id="role">{person.humanNameOfRole()}</Form.Field>
 			<Form.Field id="rank" />
 			<Form.Field id="emailAddress" />
 			<Form.Field id="domainUsername" />
@@ -203,15 +202,11 @@ class MergePeople extends Page {
 			})
 			.catch(error => {
                 this.setState({error})
-                window.scrollTo(0, 0)
+                jumpToTop()
 				console.error(error)
             })
 	}
 
 }
-
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
 
 export default connect(null, mapDispatchToProps)(withRouter(MergePeople))

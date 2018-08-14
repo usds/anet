@@ -2,7 +2,9 @@ import PropTypes from 'prop-types'
 import React, { Component } from 'react'
 import autobind from 'autobind-decorator'
 import {Checkbox} from 'react-bootstrap'
-import 'utils'
+import API from 'api'
+import _isEqualWith from 'lodash/isEqualWith'
+import utils from 'utils'
 
 import Autocomplete from 'components/Autocomplete'
 
@@ -21,45 +23,69 @@ export default class OrganizationFilter extends Component {
 		value: PropTypes.any,
 		onChange: PropTypes.func,
 
+		//Passed by the SearchFilterDisplay row
+		asFormField: PropTypes.bool,
+
 		//All other properties are passed directly to the Autocomplete.
 
+	}
+
+	static defaultProps = {
+		asFormField: true
 	}
 
 	constructor(props) {
 		super(props)
 
+		const value = props.value || {}
 		this.state = {
-			value: props.value || {},
-			includeChildOrgs: props.value.includeChildOrgs || false,
+			value: value,
+			includeChildOrgs: value.includeChildOrgs || false,
 			queryParams: props.queryParams || {},
 		}
+	}
 
+	componentDidMount() {
 		this.updateFilter()
 	}
 
-	componentDidUpdate() {
-		this.updateFilter()
+	componentDidUpdate(prevProps, prevState) {
+		if (!_isEqualWith(prevProps.value, this.props.value, utils.treatFunctionsAsEqual)) {
+			this.setState({
+				value: this.props.value,
+				includeChildOrgs: this.props.value.includeChildOrgs || false,
+			}, this.updateFilter)
+		}
 	}
 
 	render() {
-		let autocompleteProps = Object.without(this.props, 'value', 'queryKey', 'queryIncludeChildOrgsKey', 'queryParams')
+		let autocompleteProps = Object.without(this.props, 'value', 'queryKey', 'queryIncludeChildOrgsKey', 'queryParams', 'asFormField')
+		let msg = this.props.value.shortName
+		if (msg && this.state.includeChildOrgs) {
+			msg += ", including sub-organizations"
+		}
 
-		return <div>
-			<Autocomplete
-				objectType={Organization}
-				valueKey="shortName"
-				url="/api/organizations/search"
-				placeholder="Filter by organization..."
-				queryParams={this.state.queryParams}
-				{...autocompleteProps}
-				onChange={this.onAutocomplete}
-				value={this.state.value}
-			/>
+		return (
+			!this.props.asFormField ?
+				<React.Fragment>{msg}</React.Fragment>
+			:
+				<div>
+					<Autocomplete
+						objectType={Organization}
+						valueKey="shortName"
+						url="/api/organizations/search"
+						placeholder="Filter by organization..."
+						queryParams={this.state.queryParams}
+						{...autocompleteProps}
+						onChange={this.onAutocomplete}
+						value={this.state.value}
+					/>
 
-			<Checkbox inline checked={this.state.includeChildOrgs} onChange={this.changeIncludeChildren}>
-				Include sub-organizations
-			</Checkbox>
-		</div>
+					<Checkbox inline checked={this.state.includeChildOrgs} onChange={this.changeIncludeChildren}>
+						Include sub-organizations
+					</Checkbox>
+				</div>
+		)
 	}
 
 	@autobind
@@ -82,9 +108,43 @@ export default class OrganizationFilter extends Component {
 
 	@autobind
 	updateFilter() {
-		let value = this.state.value
-		value.includeChildOrgs = this.state.includeChildOrgs
-		value.toQuery = this.toQuery
-		this.props.onChange(value)
+		if (this.props.asFormField) {
+			let {value} = this.state
+			if (typeof value === 'object') {
+				value.includeChildOrgs = this.state.includeChildOrgs
+				value.toQuery = this.toQuery
+			}
+			this.props.onChange(value)
+		}
 	}
+
+	@autobind
+	deserialize(query, key) {
+		if (query[this.props.queryKey]) {
+			let getInstanceName = Organization.getInstanceName
+			let graphQlQuery = getInstanceName +
+				'(id:' + query[this.props.queryKey] + ') { id, shortName }'
+			return API.query(graphQlQuery).then(data => {
+				if (data[getInstanceName]) {
+					const toQueryValue = {[this.props.queryKey]: query[this.props.queryKey]}
+					if (query[this.props.queryIncludeChildOrgsKey]) {
+						data[getInstanceName].includeChildOrgs = query[this.props.queryIncludeChildOrgsKey]
+						toQueryValue[this.props.queryIncludeChildOrgsKey] = query[this.props.queryIncludeChildOrgsKey]
+					}
+					return {
+						key: key,
+						value: {
+							...data[getInstanceName],
+							toQuery: () => toQueryValue
+						},
+					}
+				}
+				else {
+					return null
+				}
+			})
+		}
+		return null
+	}
+
 }

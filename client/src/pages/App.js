@@ -1,8 +1,10 @@
 import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 import {Grid, Row, Col} from 'react-bootstrap'
+import autobind from 'autobind-decorator'
 
+import LoadingBar from 'react-redux-loading-bar'
 import TopBar from 'components/TopBar'
 import Nav from 'components/Nav'
 
@@ -55,49 +57,54 @@ import InsightsShow from  'pages/insights/Show'
 import OnboardingShow from 'pages/onboarding/Show'
 import OnboardingEdit from 'pages/onboarding/Edit'
 
+import AppContext from 'components/AppContext'
 import { withRouter } from 'react-router-dom'
 import { connect } from 'react-redux'
-import _isEqual from 'lodash/isEqual'
 
+import {Element} from 'react-scroll'
 class App extends Page {
 
 	static propTypes = {
+		...pagePropTypes,
 		pageProps: PropTypes.object,
+		searchProps: PropTypes.object,
 	}
 
-	static childContextTypes = {
-		app: PropTypes.object,
-		currentUser: PropTypes.instanceOf(Person),
-	}
-
-	getChildContext() {
-		return {
-			app: this,
-			currentUser: this.state.currentUser,
-		}
-	}
-
-	constructor(props, context) {
-		super(props, context)
+	constructor(props) {
+		super(props)
 
 		this.state = {
 			pageProps: props.pageProps,
 			currentUser: new Person(),
 			settings: {},
 			organizations: [],
+			floatingMenu: false
 		}
 
 		Object.assign(this.state, this.processData(window.ANET_DATA))
 	}
 
-	componentWillReceiveProps(nextProps) {
-		if (!_isEqual(this.state.pageProps, nextProps.pageProps)) {
-			this.setState({pageProps: nextProps.pageProps})
-		}
+	componentDidMount() {
+		super.componentDidMount()
+		// We want to hide the floating menu on navigation events
+		this.unlistenHistory = this.props.history.listen((location, action) => {
+			this.showFloatingMenu(false)
+		})
 	}
 
-	fetchData() {
-		API.query(/* GraphQL */`
+	componentWillUnmount() {
+		super.componentWillUnmount()
+		this.unlistenHistory()
+	}
+
+	componentDidUpdate(prevProps, prevState) {
+		// TODO: We should decide what to do here, e.g. when to call this.loadData()
+		// We do not want the behaviour of our super class Page, as that would
+		// mean this.loadData() is called with each change in props or location…
+	}
+
+	fetchData(props) {
+		return API.query(/* GraphQL */`
 			person(f:me) {
 				id, name, role, emailAddress, rank, status
 				position {
@@ -135,6 +142,11 @@ class App extends Page {
 		data.adminSettings.forEach(setting => settings[setting.key] = setting.value)
 
 		return {currentUser, settings, organizations}
+	}
+
+	@autobind
+	showFloatingMenu(floatingMenu) {
+		this.setState({floatingMenu: floatingMenu})
 	}
 
 	render() {
@@ -240,38 +252,51 @@ class App extends Page {
 			<Route path="*" component={PageMissing} />
 		</Switch>
 
+		const primaryWidths = {sm: 12, md: 12, lg: 12}
 		return (
-			<div className="anet">
-				<TopBar
-					currentUser={this.state.currentUser}
-					settings={this.state.settings}
-					minimalHeader={this.state.pageProps.minimalHeader}
-					location={this.props.location} />
+			<AppContext.Provider value={{
+				appSettings: this.state.settings,
+				currentUser: this.state.currentUser,
+				loadAppData: this.loadData,
+				showFloatingMenu: this.showFloatingMenu,
+			}}>
+				<div className="anet" style={{ display:'flex', flexDirection:'column'}}>
+					<TopBar
+						updateTopbarOffset={this.updateTopbarOffset}
+						minimalHeader={this.props.pageProps.minimalHeader}
+						location={this.props.location}
+						toggleMenuAction={() => {
+							this.showFloatingMenu(!this.state.floatingMenu)
+						}} />
 
-				<Grid fluid componentClass="section">
-					{this.state.pageProps.useNavigation === false
-						? <Row>
-								<Col xs={12}>
-									{routing}
-								</Col>
-							</Row>
-						: <Row>
-								<Col sm={4} md={3} className="hide-for-print">
-									<Nav />
-								</Col>
-								<Col sm={8} md={9} className="primary-content">
-									{routing}
-								</Col>
-							</Row>
-					}
-				</Grid>
-			</div>
+					<LoadingBar showFastActions style={{ backgroundColor: '#29d', marginTop: '-20px' }} />
+
+					<div style={{width:"100%", flex:'1 1 auto', display:'flex', flexDirection:'row', overflowY:'hidden', position:'relative' }}>
+						{(this.props.pageProps.useNavigation === true || this.state.floatingMenu === true) &&
+						<div className={ this.state.floatingMenu === false ? "hidden-xs nav-fixed" : "nav-overlay"}>
+							<Nav organizations={this.state.organizations} />
+						</div>
+						}
+						<div style={{ display:'flex', flexDirection:'column', flex:'1 1 auto'}}>
+							<Element className="primary-content" id="main-viewport">
+								<div
+									className={ this.state.floatingMenu === false ? null : "glass-pane" }
+									onClick={() => {
+										this.showFloatingMenu(false)
+									}} />
+								{routing}
+							</Element>
+						</div>
+					</div>
+				</div>
+			</AppContext.Provider>
 		)
 	}
 }
 
 const mapStateToProps = (state, ownProps) => ({
-	pageProps: state.pageProps
+	pageProps: state.pageProps,
+	searchProps: state.searchProps
 })
 
-export default connect(mapStateToProps)(withRouter(App))
+export default connect(mapStateToProps, mapDispatchToProps)(withRouter(App))

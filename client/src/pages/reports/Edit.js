@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types'
 
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 import moment from 'moment'
 import autobind from 'autobind-decorator'
 
@@ -12,19 +12,19 @@ import ReportForm from './Form'
 import API from 'api'
 import {Report, Person} from 'models'
 
+import AppContext from 'components/AppContext'
 import { withRouter } from 'react-router-dom'
-import { setPageProps, PAGE_PROPS_NO_NAV } from 'actions'
+import { PAGE_PROPS_NO_NAV } from 'actions'
 import { connect } from 'react-redux'
 
-class ReportEdit extends Page {
+class BaseReportEdit extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
+	static propTypes = {
+		...pagePropTypes,
+		currentUser: PropTypes.instanceOf(Person),
+	}
 
 	static modelName = 'Report'
-
-	static contextTypes = {
-		currentUser: PropTypes.object,
-	}
 
 	constructor(props) {
 		super(props, PAGE_PROPS_NO_NAV)
@@ -36,7 +36,7 @@ class ReportEdit extends Page {
 	}
 
 	fetchData(props) {
-		API.query(/* GraphQL */`
+		return API.query(/* GraphQL */`
 			report(id:${props.match.params.id}) {
 				id, intent, engagementDate, atmosphere, atmosphereDetails, state
 				keyOutcomes, reportText, nextSteps, cancelledReason,
@@ -44,7 +44,7 @@ class ReportEdit extends Page {
 				location { id, name },
 				attendees {
 					id, name, role, primary
-					position { id, name }
+					position { id, name, organization { id, shortName} }
 				}
 				tasks { id, shortName, longName, responsibleOrg { id, shortName} }
 				tags { id, name, description }
@@ -63,7 +63,7 @@ class ReportEdit extends Page {
 
 	render() {
 		let {report} = this.state
-		let {currentUser} = this.context
+		const { currentUser } = this.props
 
 		//Only the author can delete a report, and only in DRAFT.
 		let canDelete = (report.isDraft() || report.isRejected()) && Person.isEqual(currentUser, report.author)
@@ -98,8 +98,12 @@ class ReportEdit extends Page {
 	}
 }
 
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
+const ReportEdit = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BaseReportEdit currentUser={context.currentUser} {...props} />
+		}
+	</AppContext.Consumer>
+)
 
 export default connect(null, mapDispatchToProps)(withRouter(ReportEdit))

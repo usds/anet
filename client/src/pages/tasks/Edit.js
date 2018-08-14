@@ -1,6 +1,5 @@
-import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 import moment from 'moment'
 
 import Breadcrumbs from 'components/Breadcrumbs'
@@ -10,14 +9,16 @@ import TaskForm from './Form'
 
 import API from 'api'
 import Settings from 'Settings'
-import {Task} from 'models'
+import {Person, Task} from 'models'
 
-import { setPageProps, PAGE_PROPS_NO_NAV } from 'actions'
+import { PAGE_PROPS_NO_NAV } from 'actions'
 import { connect } from 'react-redux'
 
 class TaskEdit extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
+	static propTypes = {
+		...pagePropTypes,
+	}
 
 	static modelName = 'Task'
 
@@ -31,7 +32,7 @@ class TaskEdit extends Page {
 	}
 
 	fetchData(props) {
-		API.query(/* GraphQL */`
+		return API.query(/* GraphQL */`
 			task(id:${props.match.params.id}) {
 				id, shortName, longName, status,
 				customField, customFieldEnum1, customFieldEnum2,
@@ -64,9 +65,5 @@ class TaskEdit extends Page {
 		)
 	}
 }
-
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
 
 export default connect(null, mapDispatchToProps)(TaskEdit)

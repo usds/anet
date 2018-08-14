@@ -1,9 +1,10 @@
 import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 import {Modal, Alert, Button, HelpBlock, Popover, Overlay} from 'react-bootstrap'
 import autobind from 'autobind-decorator'
 import moment from 'moment'
+import pluralize from 'pluralize'
 
 import Fieldset from 'components/Fieldset'
 import Breadcrumbs from 'components/Breadcrumbs'
@@ -19,8 +20,8 @@ import utils from 'utils'
 
 import API from 'api'
 
+import AppContext from 'components/AppContext'
 import { withRouter } from 'react-router-dom'
-import { setPageProps } from 'actions'
 import { connect } from 'react-redux'
 
 var d3 = null/* required later */
@@ -41,14 +42,11 @@ const legendCss = {
 	display: 'inline-block',
 }
 
-class RollupShow extends Page {
+class BaseRollupShow extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes, {
+	static propTypes = {
+		...pagePropTypes,
 		date: PropTypes.object,
-	})
-
-	static contextTypes = {
-		app: PropTypes.object.isRequired,
 	}
 
 	get dateStr() { return this.state.date.format('DD MMM YYYY') }
@@ -74,13 +72,27 @@ class RollupShow extends Page {
 		this.previewPlaceholderUrl = API.addAuthParams("/help")
 	}
 
-	componentWillReceiveProps(newProps, newContext) {
-		const qs = utils.parseQueryString(newProps.location.search)
-		let newDate = moment(+qs.date || undefined)
-		if (!this.state.date.isSame(newDate)) {
-			this.setState({date: newDate}, () => this.loadData(newProps, newContext))
-		} else {
-			super.componentWillReceiveProps(newProps, newContext)
+	static getDerivedStateFromProps(props, state) {
+		const stateUpdate = {}
+		const qs = utils.parseQueryString(props.location.search)
+		const date = moment(+qs.date || undefined)
+		if (!state.date.isSame(date, 'day')) {
+			Object.assign(stateUpdate, {date: date})
+		}
+		const { appSettings } = props || {}
+		const maxReportAge = appSettings.DAILY_ROLLUP_MAX_REPORT_AGE_DAYS
+		if (maxReportAge !== state.maxReportAge) {
+			Object.assign(stateUpdate, {maxReportAge: maxReportAge})
+		}
+		return stateUpdate
+	}
+
+	componentDidUpdate(prevProps, prevState) {
+		if (!this.state.date.isSame(prevState.date, 'day') || prevState.maxReportAge !== this.state.maxReportAge) {
+			this.loadData()
+		}
+		else {
+			this.renderGraph()
 		}
 	}
 
@@ -91,16 +103,14 @@ class RollupShow extends Page {
 			return
 		}
 
-		require.ensure([], () => {
-			d3 = require('d3')
+		import('d3').then(importedModule => {
+			d3 = importedModule
 			this.forceUpdate()
 		})
 	}
 
-	fetchData(props, context) {
-		const settings = context.app.state.settings
-		const maxReportAge = settings.DAILY_ROLLUP_MAX_REPORT_AGE_DAYS
-		if (!maxReportAge) {
+	fetchData(props) {
+		if (!this.state.maxReportAge) {
 			//don't run the query unless we've loaded the rollup settings.
 			return
 		}
@@ -109,13 +119,13 @@ class RollupShow extends Page {
 			state: [Report.STATE.RELEASED], //Specifically excluding cancelled engagements.
 			releasedAtStart: this.rollupStart.valueOf(),
 			releasedAtEnd: this.rollupEnd.valueOf(),
-			engagementDateStart: moment(this.rollupStart).subtract(maxReportAge, 'days').valueOf(),
+			engagementDateStart: moment(this.rollupStart).subtract(this.state.maxReportAge, 'days').valueOf(),
 			sortBy: "ENGAGEMENT_DATE",
 			sortOrder: "DESC",
 			pageNum: this.state.reportsPageNum,
 			pageSize: 10,
 		}
-
+		Object.assign(rollupQuery, this.getSearchQuery(props))
 		let graphQueryUrl = `/api/reports/rollupGraph?startDate=${rollupQuery.releasedAtStart}&endDate=${rollupQuery.releasedAtEnd}`
 		if (this.state.focusedOrg) {
 			if (this.state.orgType === Organization.TYPE.PRINCIPAL_ORG) {
@@ -143,7 +153,7 @@ class RollupShow extends Page {
 
 		const pinned_ORGs = Settings.pinned_ORGs
 
-		Promise.all([reportQuery, graphQuery]).then(values => {
+		return Promise.all([reportQuery, graphQuery]).then(values => {
 			this.setState({
 				reports: values[0].reportList,
 				graphData: values[1]
@@ -161,10 +171,6 @@ class RollupShow extends Page {
 					})
 			})
 		})
-	}
-
-	componentDidUpdate() {
-		this.renderGraph()
 	}
 
 	render() {
@@ -215,8 +221,8 @@ class RollupShow extends Page {
 					title={`Reports ${this.state.focusedOrg ? `for ${this.state.focusedOrg.shortName}` : ''}`}
 					action={!this.state.focusedOrg
 						? <ButtonToggleGroup value={this.state.orgType} onChange={this.changeOrgType}>
-							<Button value={Organization.TYPE.ADVISOR_ORG}>Advisor organizations</Button>
-							<Button value={Organization.TYPE.PRINCIPAL_ORG}>Principal organizations</Button>
+							<Button value={Organization.TYPE.ADVISOR_ORG}>{pluralize(Settings.fields.advisor.org.name)}</Button>
+							<Button value={Organization.TYPE.PRINCIPAL_ORG}>{pluralize(Settings.fields.principal.org.name)}</Button>
 						</ButtonToggleGroup>
 						: <Button onClick={() => this.goToOrg()}>All organizations</Button>
 					}
@@ -319,8 +325,7 @@ class RollupShow extends Page {
 
 	@autobind
 	goToReportsPage(newPageNum) {
-		this.state.reportsPageNum = newPageNum
-		this.loadData()
+		this.setState({reportsPageNum: newPageNum}, () => this.loadData())
 	}
 
 	@autobind
@@ -461,8 +466,16 @@ class RollupShow extends Page {
 	}
 }
 
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
+const mapStateToProps = (state, ownProps) => ({
+	searchQuery: state.searchQuery
 })
 
-export default connect(null, mapDispatchToProps)(withRouter(RollupShow))
+const RollupShow = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BaseRollupShow appSettings={context.appSettings} {...props} />
+		}
+	</AppContext.Consumer>
+)
+
+export default connect(mapStateToProps, mapDispatchToProps)(withRouter(RollupShow))

@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 
 import Form from 'components/Form'
 import Fieldset from 'components/Fieldset'
@@ -10,19 +10,18 @@ import LinkTo from 'components/LinkTo'
 import PositionTable from 'components/PositionTable'
 import ReportCollection from 'components/ReportCollection'
 
-import {AuthorizationGroup} from 'models'
+import {AuthorizationGroup, Person} from 'models'
 import GQL from 'graphqlapi'
 import autobind from 'autobind-decorator'
 
-import { setPageProps } from 'actions'
+import AppContext from 'components/AppContext'
 import { connect } from 'react-redux'
 
-class AuthorizationGroupShow extends Page {
+class BaseAuthorizationGroupShow extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
-
-	static contextTypes = {
-		currentUser: PropTypes.object.isRequired,
+	static propTypes = {
+		...pagePropTypes,
+		currentUser: PropTypes.instanceOf(Person),
 	}
 
 	constructor(props) {
@@ -75,11 +74,11 @@ class AuthorizationGroupShow extends Page {
 		}` )
 		let positionsPart = this.getPositionQueryPart(props.match.params.id)
 		let reportsPart = this.getReportQueryPart(props.match.params.id)
-		this.runGQL([authGroupPart, positionsPart, reportsPart])
+		return this.runGQL([authGroupPart, positionsPart, reportsPart])
 	}
 
 	runGQL(queries) {
-		GQL.run(queries).then(data => {
+		return GQL.run(queries).then(data => {
 			this.setState({
 				authorizationGroup: new AuthorizationGroup(data.authorizationGroup),
 				positions: data.paginatedPositions,
@@ -90,7 +89,7 @@ class AuthorizationGroupShow extends Page {
 
 	render() {
 		let authorizationGroup = this.state.authorizationGroup
-		let currentUser = this.context.currentUser
+		const { currentUser } = this.props
 		return (
 
 			<div>
@@ -139,8 +138,12 @@ class AuthorizationGroupShow extends Page {
 
 }
 
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
+const AuthorizationGroupShow = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BaseAuthorizationGroupShow currentUser={context.currentUser} {...props} />
+		}
+	</AppContext.Consumer>
+)
 
 export default connect(null, mapDispatchToProps)(AuthorizationGroupShow)

@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 import autobind from 'autobind-decorator'
 
 import Form from 'components/Form'
@@ -12,17 +12,16 @@ import LinkTo from 'components/LinkTo'
 import ReportCollection from 'components/ReportCollection'
 
 import GQL from 'graphqlapi'
-import {Location} from 'models'
+import {Location, Person} from 'models'
 
-import { setPageProps } from 'actions'
+import AppContext from 'components/AppContext'
 import { connect } from 'react-redux'
 
-class LocationShow extends Page {
+class BaseLocationShow extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
-
-	static contextTypes = {
-		currentUser: PropTypes.object.isRequired,
+	static propTypes = {
+		...pagePropTypes,
+		currentUser: PropTypes.instanceOf(Person),
 	}
 
 	static modelName = 'Location'
@@ -54,7 +53,7 @@ class LocationShow extends Page {
 			}
 		`)
 
-		GQL.run([reportsQuery, locationQuery]).then(data => {
+		return GQL.run([reportsQuery, locationQuery]).then(data => {
             this.setState({
                 location: new Location(data.location),
 				reports: data.reports,
@@ -64,7 +63,7 @@ class LocationShow extends Page {
 
 	render() {
 		let {location, reports} = this.state
-		let currentUser = this.context.currentUser
+		const { currentUser } = this.props
 		let markers=[]
 		let latlng = 'None'
 		if (Location.hasCoordinates(location)) {
@@ -85,7 +84,7 @@ class LocationShow extends Page {
 						<Form.Field id="latlng" value={latlng} label="Lat/Lon" />
 					</Fieldset>
 
-					<Leaflet markers={markers}/>
+					<Leaflet markers={markers} />
 				</Form>
 
 				<Fieldset title="Reports at this location">
@@ -101,8 +100,12 @@ class LocationShow extends Page {
 	}
 }
 
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
+const LocationShow = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BaseLocationShow currentUser={context.currentUser} {...props} />
+		}
+	</AppContext.Consumer>
+)
 
 export default connect(null, mapDispatchToProps)(LocationShow)

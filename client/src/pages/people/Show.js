@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 import {Table, FormGroup, Col, ControlLabel, Button} from 'react-bootstrap'
 import moment from 'moment'
 
@@ -21,15 +21,14 @@ import autobind from 'autobind-decorator'
 import GQL from 'graphqlapi'
 import Settings from 'Settings'
 
-import { setPageProps } from 'actions'
+import AppContext from 'components/AppContext'
 import { connect } from 'react-redux'
 
-class PersonShow extends Page {
+class BasePersonShow extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
-
-	static contextTypes = {
-		currentUser: PropTypes.object.isRequired,
+	static propTypes = {
+		...pagePropTypes,
+		currentUser: PropTypes.instanceOf(Person),
 	}
 
 	static modelName = 'User'
@@ -87,7 +86,7 @@ class PersonShow extends Page {
 		let personPart = new GQL.Part(/* GraphQL */`
 			person(id:${props.match.params.id}) {
 				id,
-				name, rank, role, status, emailAddress, phoneNumber,
+				name, rank, role, status, emailAddress, phoneNumber, domainUsername,
 				biography, country, gender, endOfTourDate,
 				position {
 					id,
@@ -106,7 +105,7 @@ class PersonShow extends Page {
 		let authoredReportsPart = this.getAuthoredReportsPart(props.match.params.id)
 		let attendedReportsPart = this.getAttendedReportsPart(props.match.params.id)
 
-		GQL.run([personPart, authoredReportsPart, attendedReportsPart]).then(data =>
+		return GQL.run([personPart, authoredReportsPart, attendedReportsPart]).then(data =>
 			this.setState({
 				person: new Person(data.person),
 				authoredReports: data.authoredReports,
@@ -125,14 +124,15 @@ class PersonShow extends Page {
 		//User can always edit themselves
 		//Admins can always edit anybody
 		//SuperUsers can edit people in their org, their descendant orgs, or un-positioned people.
-		const currentUser = this.context.currentUser
+		const { currentUser } = this.props
+		const isAdmin = currentUser && currentUser.isAdmin()
 		const hasPosition = position && position.id
 		const canEdit = Person.isEqual(currentUser, person) ||
-			currentUser.isAdmin() ||
+			isAdmin ||
 			(hasPosition && currentUser.isSuperUserForOrg(position.organization)) ||
 			(!hasPosition && currentUser.isSuperUser()) ||
 			(person.role === Person.ROLE.PRINCIPAL && currentUser.isSuperUser())
-		const canChangePosition = currentUser.isAdmin() ||
+		const canChangePosition = isAdmin ||
 			(!hasPosition && currentUser.isSuperUser()) ||
 			(hasPosition && currentUser.isSuperUserForOrg(position.organization)) ||
 			(person.role === Person.ROLE.PRINCIPAL && currentUser.isSuperUser())
@@ -159,6 +159,10 @@ class PersonShow extends Page {
 						<Form.Field id="rank" />
 
 						<Form.Field id="role">{person.humanNameOfRole()}</Form.Field>
+
+						{isAdmin &&
+							<Form.Field id="domainUsername" />
+						}
 
 						<Form.Field id="status">{person.humanNameOfStatus()}</Form.Field>
 
@@ -220,7 +224,7 @@ class PersonShow extends Page {
 
 					{person.isAdvisor() && authoredReports &&
 						<Fieldset title="Reports authored" id="reports-authored">
-							<ReportCollection
+							<ReportCollection mapId="reports-authored"
 								paginatedReports={authoredReports}
 								goToPage={this.goToAuthoredPage}
 							 />
@@ -229,7 +233,7 @@ class PersonShow extends Page {
 
 					{attendedReports &&
 						<Fieldset title={`Reports attended by ${person.name}`} id="reports-attended">
-							<ReportCollection
+							<ReportCollection mapId="reports-attended"
 								paginatedReports={attendedReports}
 								goToPage={this.goToAttendedPage}
 							/>
@@ -273,7 +277,7 @@ class PersonShow extends Page {
 	}
 
 	renderPositionBlankSlate(person) {
-		let currentUser = this.context.currentUser
+		const { currentUser } = this.props
 		//when the person is not in a position, any super user can assign them.
 		let canChangePosition = currentUser.isSuperUser()
 
@@ -335,8 +339,12 @@ class PersonShow extends Page {
 	}
 }
 
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
+const PersonShow = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BasePersonShow currentUser={context.currentUser} {...props} />
+		}
+	</AppContext.Consumer>
+)
 
 export default connect(null, mapDispatchToProps)(PersonShow)

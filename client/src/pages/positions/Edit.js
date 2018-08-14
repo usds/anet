@@ -1,20 +1,21 @@
-import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 
 import Breadcrumbs from 'components/Breadcrumbs'
 
 import PositionForm from './Form'
 
 import API from 'api'
-import {Position} from 'models'
+import {Person, Position} from 'models'
 
-import { setPageProps, PAGE_PROPS_NO_NAV } from 'actions'
+import { PAGE_PROPS_NO_NAV } from 'actions'
 import { connect } from 'react-redux'
 
 class PositionEdit extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
+	static propTypes = {
+		...pagePropTypes,
+	}
 
 	static modelName = 'Position'
 
@@ -28,13 +29,13 @@ class PositionEdit extends Page {
 	}
 
 	fetchData(props) {
-		API.query(/* GraphQL */`
+		return API.query(/* GraphQL */`
 			position(id:${props.match.params.id}) {
 				id, name, code, status, type
 				location { id, name },
 				associatedPositions { id, name, person { id, name, rank } },
 				organization {id, shortName, longName, identificationCode, type},
-				person { id, name}
+				person { id, name, rank}
 			}
 		`).then(data => {
 			function getPositionFromData() {
@@ -66,9 +67,5 @@ class PositionEdit extends Page {
 		)
 	}
 }
-
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
 
 export default connect(null, mapDispatchToProps)(PositionEdit)

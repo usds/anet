@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types'
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 import moment from 'moment'
 
 import PersonForm from 'pages/people/Form'
@@ -8,15 +8,15 @@ import PersonForm from 'pages/people/Form'
 import API from 'api'
 import {Person} from 'models'
 
-import { setPageProps, PAGE_PROPS_MIN_HEAD } from 'actions'
+import AppContext from 'components/AppContext'
+import { PAGE_PROPS_MIN_HEAD } from 'actions'
 import { connect } from 'react-redux'
 
-class OnboardingEdit extends Page {
+class BaseOnboardingEdit extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
-
-	static contextTypes = {
-		currentUser: PropTypes.object.isRequired,
+	static propTypes = {
+		...pagePropTypes,
+		currentUser: PropTypes.instanceOf(Person),
 	}
 
 	static modelName = 'User'
@@ -30,8 +30,8 @@ class OnboardingEdit extends Page {
 	}
 
 	fetchData(props) {
-		API.query(/* GraphQL */`
-			person(id:${this.context.currentUser.id}) {
+		return API.query(/* GraphQL */`
+			person(id:${props.currentUser.id}) {
 				id,
 				name, rank, role, emailAddress, phoneNumber, status
 				biography, country, gender, endOfTourDate, domainUsername
@@ -59,8 +59,12 @@ class OnboardingEdit extends Page {
 	}
 }
 
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
+const OnboardingEdit = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BaseOnboardingEdit currentUser={context.currentUser} {...props} />
+		}
+	</AppContext.Consumer>
+)
 
 export default connect(null, mapDispatchToProps)(OnboardingEdit)

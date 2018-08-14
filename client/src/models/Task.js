@@ -1,20 +1,15 @@
-import PropTypes from 'prop-types'
 import React from 'react'
 
 import Model from 'components/Model'
 import Settings from 'Settings'
 
 export default class Task extends Model {
-	static contextTypes = {
-		app: PropTypes.object.isRequired,
-	}
-
 	static resourceName = 'Task'
+	static listName = 'taskList'
+	static getInstanceName = 'task'
 	static displayName() {
 		return Settings.fields.task.shortLabel
 	}
-
-	static listName = 'taskList'
 
 	static STATUS = {
 		ACTIVE: 'ACTIVE',
@@ -32,6 +27,7 @@ export default class Task extends Model {
 		customField: '',
 		projectedCompletion: null,
 		plannedCompletion: null,
+		get status() { return Task.STATUS.ACTIVE },
 	}
 
 	static autocompleteQuery = "id, shortName, longName"

@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types'
 
 import React from 'react'
-import Page from 'components/Page'
+import Page, {mapDispatchToProps, propTypes as pagePropTypes} from 'components/Page'
 import {Alert, Table, Button, Col, HelpBlock, Modal, Checkbox} from 'react-bootstrap'
 import autobind from 'autobind-decorator'
 import moment from 'moment'
@@ -21,16 +21,16 @@ import {Report, Person, Task, Comment, Position} from 'models'
 
 import ConfirmDelete from 'components/ConfirmDelete'
 
+import AppContext from 'components/AppContext'
 import { withRouter } from 'react-router-dom'
-import { setPageProps } from 'actions'
 import { connect } from 'react-redux'
+import { jumpToTop, AnchorLink } from 'components/Page'
 
-class ReportShow extends Page {
+class BaseReportShow extends Page {
 
-	static propTypes = Object.assign({}, Page.propTypes)
-
-	static contextTypes = {
-		currentUser: PropTypes.object.isRequired,
+	static propTypes = {
+		...pagePropTypes,
+		currentUser: PropTypes.instanceOf(Person),
 	}
 
 	static modelName = 'Report'
@@ -48,7 +48,7 @@ class ReportShow extends Page {
 	}
 
 	fetchData(props) {
-		API.query(/* GraphQL */`
+		return API.query(/* GraphQL */`
 			report(id:${props.match.params.id}) {
 				id, intent, engagementDate, atmosphere, atmosphereDetails
 				keyOutcomes, reportText, nextSteps, cancelledReason
@@ -74,7 +74,7 @@ class ReportShow extends Page {
 
 				attendees {
 					id, name, role, primary, rank, status, endOfTourDate
-					position { id, name, status }
+					position { id, name, status, organization { id, shortName} }
 				}
 				primaryAdvisor { id }
 				primaryPrincipal { id }
@@ -109,21 +109,22 @@ class ReportShow extends Page {
 	}
 
 	renderNoPositionAssignedText() {
-		const {currentUser} = this.context
+		const { currentUser } = this.props
 		const alertStyle = {top:132, marginBottom: '1rem', textAlign: 'center'}
 		const supportEmail = Settings.SUPPORT_EMAIL_ADDR
 		const supportEmailMessage = supportEmail ? `at ${supportEmail}` : ''
+		const advisorPositionSingular = Settings.fields.advisor.position.name
 		if (!currentUser.hasAssignedPosition()) {
 			return <div className="alert alert-warning" style={alertStyle}>
-					You cannot submit a report: you are not assigned to an advisor position.<br/>
-					Please contact your organization's super user(s) and request to be assigned to an advisor position.<br/>
+					You cannot submit a report: you are not assigned to a {advisorPositionSingular} position.<br/>
+					Please contact your organization's super user(s) and request to be assigned to a {advisorPositionSingular} position.<br/>
 					If you are unsure, you can also contact the support team {supportEmailMessage}.
 				</div>
 		}
 		else {
 			return <div className="alert alert-warning" style={alertStyle}>
-					You cannot submit a report: your assigned advisor position has an inactive status.<br/>
-					Please contact your organization's super users and request them to assign you to an active advisor position.<br/>
+					You cannot submit a report: your assigned {advisorPositionSingular} position has an inactive status.<br/>
+					Please contact your organization's super users and request them to assign you to an active {advisorPositionSingular} position.<br/>
 					If you are unsure, you can also contact the support team {supportEmailMessage}.
 				</div>
 		}
@@ -131,10 +132,10 @@ class ReportShow extends Page {
 
 	render() {
 		const {report} = this.state
-		const {currentUser} = this.context
+		const { currentUser } = this.props
 
 		const canApprove = report.isPending() && currentUser.position &&
-			report.approvalStep.approvers.find(member => Position.isEqual(member, currentUser.position))
+			report.approvalStep && report.approvalStep.approvers.find(member => Position.isEqual(member, currentUser.position))
 
 		//Authors can edit in draft mode, rejected mode, or Pending Mode
 		let canEdit = (report.isDraft() || report.isPending() || report.isRejected() || report.isFuture()) && Person.isEqual(currentUser, report.author)
@@ -192,7 +193,7 @@ class ReportShow extends Page {
 				{report.isPending() &&
 					<Fieldset style={{textAlign: 'center'}}>
 						<h4 className="text-danger">This report is PENDING approvals.</h4>
-						<p>It won't be available in the ANET database until your <a href="#approvals">approval organization</a> marks it as approved.</p>
+						<p>It won't be available in the ANET database until your <AnchorLink to="approvals">approval organization</AnchorLink> marks it as approved.</p>
 					</Fieldset>
 				}
 
@@ -262,6 +263,7 @@ class ReportShow extends Page {
 									<th style={{textAlign: 'center'}}>Primary</th>
 									<th>Name</th>
 									<th>Position</th>
+									<th>Org</th>
 								</tr>
 							</thead>
 
@@ -269,7 +271,7 @@ class ReportShow extends Page {
 								{Person.map(report.attendees.filter(p => p.role === Person.ROLE.ADVISOR), person =>
 									this.renderAttendeeRow(person)
 								)}
-								<tr><td colSpan={3}><hr className="attendee-divider" /></td></tr>
+								<tr><td colSpan={4}><hr className="attendee-divider" /></td></tr>
 								{Person.map(report.attendees.filter(p => p.role === Person.ROLE.PRINCIPAL), person =>
 									this.renderAttendeeRow(person)
 								)}
@@ -449,6 +451,7 @@ class ReportShow extends Page {
 				<LinkTo person={person} />
 			</td>
 			<td><LinkTo position={person.position} /></td>
+			<td><LinkTo whenUnspecified="" organization={person.position && person.position.organization} /> </td>
 		</tr>
 	}
 
@@ -591,13 +594,13 @@ class ReportShow extends Page {
 	@autobind
 	updateReport(json) {
 		this.fetchData(this.props)
-		window.scrollTo(0, 0)
+		jumpToTop()
 	}
 
 	@autobind
 	handleError(response) {
 		this.setState({error: response})
-		window.scrollTo(0, 0)
+		jumpToTop()
 	}
 
 
@@ -618,8 +621,12 @@ class ReportShow extends Page {
 	}
 }
 
-const mapDispatchToProps = (dispatch, ownProps) => ({
-	setPageProps: pageProps => dispatch(setPageProps(pageProps))
-})
+const ReportShow = (props) => (
+	<AppContext.Consumer>
+		{context =>
+			<BaseReportShow currentUser={context.currentUser} {...props} />
+		}
+	</AppContext.Consumer>
+)
 
 export default connect(null, mapDispatchToProps)(withRouter(ReportShow))
