@@ -15,7 +15,7 @@ export default class Breadcrumbs extends Component {
 		let {items, ...props} = this.props
 
 		return (
-			<Breadcrumb {...props}>
+			<Breadcrumb {...props} className="sticky-top-0">
 				{this.makeItem(['ANET', '/'])}
 				{items.map(this.makeItem)}
 			</Breadcrumb>
