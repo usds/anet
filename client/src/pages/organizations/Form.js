@@ -57,12 +57,13 @@ class BaseOrganizationForm extends ValidatableFormWrapper {
 			<NavigationWarning isBlocking={this.state.isBlocking} />
 
 			<ValidatableForm
-			title={edit ? `Edit Organization ${organization.shortName}` : "Create a new Organization"}
-			formFor={organization}
-			onChange={this.onChange}
-			onSubmit={this.onSubmit}
-			submitText="Save organization"
-			horizontal>
+				title={edit ? `Edit Organization ${organization.shortName}` : "Create a new Organization"}
+				formFor={organization}
+				onChange={this.onChange}
+				onSubmit={this.onSubmit}
+				submitText="Save organization"
+				horizontal
+			>
 
 			<Messages error={this.state.error} />
 

@@ -136,177 +136,183 @@ class BasePersonForm extends ValidatableFormWrapper {
 		return <div>
 			<NavigationWarning isBlocking={this.state.isBlocking} />
 
-			<ValidatableForm formFor={person} onChange={this.onChange} onSubmit={this.onSubmit} horizontal
-			submitText={this.props.saveText || 'Save person'}>
+			<ValidatableForm
+				title={legendText}
+				formFor={person}
+				onChange={this.onChange}
+				onSubmit={this.onSubmit}
+				submitText={this.props.saveText || 'Save person'}
+				horizontal
+			>
 
-			<Messages error={this.state.error} />
+				<Messages error={this.state.error} />
 
-			<Fieldset title={legendText}>
-				<FormGroup>
-					<Col sm={2} componentClass={ControlLabel}>Name</Col>
-					<Col sm={7}>
-						<Col sm={5}>
-							<RequiredField disabled={!canEditName}
-								id="lastName"
-								type="text"
-								display="inline"
-								placeholder="LAST NAME"
-								value={this.state.splitName.lastName}
-								onChange={this.handleOnChangeLastName}
-								onKeyDown={this.handleOnKeyDown}
-								/>
+				<Fieldset>
+					<FormGroup>
+						<Col sm={2} componentClass={ControlLabel}>Name</Col>
+						<Col sm={7}>
+							<Col sm={5}>
+								<RequiredField disabled={!canEditName}
+									id="lastName"
+									type="text"
+									display="inline"
+									placeholder="LAST NAME"
+									value={this.state.splitName.lastName}
+									onChange={this.handleOnChangeLastName}
+									onKeyDown={this.handleOnKeyDown}
+									/>
+							</Col>
+							<Col sm={1} className="name-input">,</Col>
+							<Col sm={6}>
+							{isAdvisor ?
+								<RequiredField disabled={!canEditName} {...firstNameProps} />
+								:
+								<Form.Field disabled={!canEditName} {...firstNameProps} />
+							}
+							</Col>
+							<RequiredField disabled={!canEditName} className="hidden" id="name" value={fullName} />
 						</Col>
-						<Col sm={1} className="name-input">,</Col>
-						<Col sm={6}>
-						{isAdvisor ?
-							<RequiredField disabled={!canEditName} {...firstNameProps} />
-							:
-							<Form.Field disabled={!canEditName} {...firstNameProps} />
+
+						{edit && !canEditName &&
+							<div>
+								<TriggerableConfirm
+									onConfirm={this.confirmReset.bind(this)}
+									title="Confirm to reset account"
+									body="Are you sure you want to reset this account?"
+									confirmText={confirmLabel}
+									cancelText="No, I am not entirely sure at this point"
+									bsStyle="warning"
+									buttonLabel="Reset account"
+									className="hidden"
+									ref={confirmComponent => this.confirmHasReplacementButton = confirmComponent} />
+								<Button id="wrongPerson" onClick={this.showWrongPersonModal}>{nameMessage}</Button>
+								<OptionListModal
+									title={modalTitle}
+									showModal={this.state.showWrongPersonModal}
+									onCancel={this.hideWrongPersonModal.bind(this)}
+									onSuccess={this.hideWrongPersonModal.bind(this)}>
+									{(isSelf &&
+										<div>
+											<Radio name="wrongPerson" value="needNewAccount">
+												<em>{fullName}</em> has left and is replaced by me. I need to set up a new account.
+											</Radio>
+											<Radio name="wrongPerson" value="haveAccount">
+												<em>{fullName}</em> has left and is replaced by me. I already have an account.
+											</Radio>
+											<Radio name="wrongPerson" value="transferAccount">
+												<em>{fullName}</em> is still active, but this should be my account.
+											</Radio>
+											<Radio name="wrongPerson" value="misspelledName">
+												I am <em>{fullName}</em>, but my name is misspelled.
+											</Radio>
+											<Radio name="wrongPerson" value="otherError">
+												Something else is wrong.
+											</Radio>
+										</div>
+									) || (
+										<div>
+											<Radio name="wrongPerson" value="leftVacant">
+												<em>{fullName}</em> has left and the position is vacant.
+											</Radio>
+											<Radio name="wrongPerson" value="hasReplacement">
+												<em>{fullName}</em> has left and has a replacement.
+											</Radio>
+											<Radio name="wrongPerson" value="misspelledName">
+												The name of <em>{fullName}</em> is misspelled.
+											</Radio>
+											<Radio name="wrongPerson" value="otherError">
+												Something else is wrong.
+											</Radio>
+										</div>
+									)}
+								</OptionListModal>
+							</div>
 						}
-						</Col>
-						<RequiredField disabled={!canEditName} className="hidden" id="name" value={fullName} />
-					</Col>
+					</FormGroup>
 
-					{edit && !canEditName &&
-						<div>
-							<TriggerableConfirm
-								onConfirm={this.confirmReset.bind(this)}
-								title="Confirm to reset account"
-								body="Are you sure you want to reset this account?"
-								confirmText={confirmLabel}
-								cancelText="No, I am not entirely sure at this point"
-								bsStyle="warning"
-								buttonLabel="Reset account"
-								className="hidden"
-								ref={confirmComponent => this.confirmHasReplacementButton = confirmComponent} />
-							<Button id="wrongPerson" onClick={this.showWrongPersonModal}>{nameMessage}</Button>
-							<OptionListModal
-								title={modalTitle}
-								showModal={this.state.showWrongPersonModal}
-								onCancel={this.hideWrongPersonModal.bind(this)}
-								onSuccess={this.hideWrongPersonModal.bind(this)}>
-								{(isSelf &&
-									<div>
-										<Radio name="wrongPerson" value="needNewAccount">
-											<em>{fullName}</em> has left and is replaced by me. I need to set up a new account.
-										</Radio>
-										<Radio name="wrongPerson" value="haveAccount">
-											<em>{fullName}</em> has left and is replaced by me. I already have an account.
-										</Radio>
-										<Radio name="wrongPerson" value="transferAccount">
-											<em>{fullName}</em> is still active, but this should be my account.
-										</Radio>
-										<Radio name="wrongPerson" value="misspelledName">
-											I am <em>{fullName}</em>, but my name is misspelled.
-										</Radio>
-										<Radio name="wrongPerson" value="otherError">
-											Something else is wrong.
-										</Radio>
-									</div>
-								) || (
-									<div>
-										<Radio name="wrongPerson" value="leftVacant">
-											<em>{fullName}</em> has left and the position is vacant.
-										</Radio>
-										<Radio name="wrongPerson" value="hasReplacement">
-											<em>{fullName}</em> has left and has a replacement.
-										</Radio>
-										<Radio name="wrongPerson" value="misspelledName">
-											The name of <em>{fullName}</em> is misspelled.
-										</Radio>
-										<Radio name="wrongPerson" value="otherError">
-											Something else is wrong.
-										</Radio>
-									</div>
-								)}
-							</OptionListModal>
-						</div>
-					}
-				</FormGroup>
-
-				{isAdmin &&
-					<Form.Field id="domainUsername">
-						<Form.Field.ExtraCol>
-							<span className="text-danger">Be careful when changing this field; you might lock someone out or create duplicate accounts.</span>
-						</Form.Field.ExtraCol>
-					</Form.Field>
-				}
-
-				{edit ?
-					<Form.Field type="static" id="role" value={person.humanNameOfRole()} />
-					:
-					<Form.Field id="role">
-						<ButtonToggleGroup>
-							<Button id="roleAdvisorButton" disabled={!isAdmin} title={superUserAdvisorTitle} value={Person.ROLE.ADVISOR}>{Settings.fields.advisor.person.name}</Button>
-							<Button id="rolePrincipalButton" value={Person.ROLE.PRINCIPAL}>{Settings.fields.principal.person.name}</Button>
-						</ButtonToggleGroup>
-					</Form.Field>
-				}
-
-				{disableStatusChange ?
-					<Form.Field type="static" id="status" value={person.humanNameOfStatus()} />
-					:
-					person.isNewUser() ?
-						<Form.Field type="static" id="status" value="New user" />
-						:
-						<Form.Field id="status" >
-							<ButtonToggleGroup>
-								<Button id="statusActiveButton" value={ Person.STATUS.ACTIVE }>Active</Button>
-								<Button id="statusInactiveButton" value={ Person.STATUS.INACTIVE }>Inactive</Button>
-							</ButtonToggleGroup>
-
-							{willAutoKickPosition && <HelpBlock>
-								<span className="text-danger">Settings this person to inactive will automatically remove them from the <strong>{person.position.name}</strong> position.</span>
-							</HelpBlock> }
-
-							{warnDomainUsername && <HelpBlock>
-								<span className="text-danger">Settings this person to inactive means the next person to logon with the user name <strong>{person.domainUsername}</strong> will have to create a new profile. Do you want the next person to login with this user name to create a new profile?</span>
-							</HelpBlock> }
+					{isAdmin &&
+						<Form.Field id="domainUsername">
+							<Form.Field.ExtraCol>
+								<span className="text-danger">Be careful when changing this field; you might lock someone out or create duplicate accounts.</span>
+							</Form.Field.ExtraCol>
 						</Form.Field>
-				}
+					}
 
-				{!edit && isAdvisor &&
-					<Alert bsStyle="warning">
-						Creating a {Settings.fields.advisor.person.name} in ANET could result in duplicate accounts if this person logs in later. If you notice duplicate accounts, please contact an ANET administrator.
-					</Alert>
-				}
-			</Fieldset>
+					{edit ?
+						<Form.Field type="static" id="role" value={person.humanNameOfRole()} />
+						:
+						<Form.Field id="role">
+							<ButtonToggleGroup>
+								<Button id="roleAdvisorButton" disabled={!isAdmin} title={superUserAdvisorTitle} value={Person.ROLE.ADVISOR}>{Settings.fields.advisor.person.name}</Button>
+								<Button id="rolePrincipalButton" value={Person.ROLE.PRINCIPAL}>{Settings.fields.principal.person.name}</Button>
+							</ButtonToggleGroup>
+						</Form.Field>
+					}
 
-			<Fieldset title="Additional information">
-				<RequiredField id="emailAddress" label="Email" required={isAdvisor}
-					humanName="Valid email address"
-					type="email"
-					validate={ this.handleEmailValidation } />
-				<Form.Field id="phoneNumber" label="Phone" />
-				<RequiredField id="rank"  componentClass="select"
-					required={isAdvisor}>
+					{disableStatusChange ?
+						<Form.Field type="static" id="status" value={person.humanNameOfStatus()} />
+						:
+						person.isNewUser() ?
+							<Form.Field type="static" id="status" value="New user" />
+							:
+							<Form.Field id="status" >
+								<ButtonToggleGroup>
+									<Button id="statusActiveButton" value={ Person.STATUS.ACTIVE }>Active</Button>
+									<Button id="statusInactiveButton" value={ Person.STATUS.INACTIVE }>Inactive</Button>
+								</ButtonToggleGroup>
 
-					<option />
-					{ranks.map(rank =>
-						<option key={rank} value={rank}>{rank}</option>
-					)}
-				</RequiredField>
+								{willAutoKickPosition && <HelpBlock>
+									<span className="text-danger">Settings this person to inactive will automatically remove them from the <strong>{person.position.name}</strong> position.</span>
+								</HelpBlock> }
 
-				<RequiredField id="gender" componentClass="select"
-					required={isAdvisor}>
-					<option />
-					<option value="MALE" >Male</option>
-					<option value="FEMALE" >Female</option>
-				</RequiredField>
+								{warnDomainUsername && <HelpBlock>
+									<span className="text-danger">Settings this person to inactive means the next person to logon with the user name <strong>{person.domainUsername}</strong> will have to create a new profile. Do you want the next person to login with this user name to create a new profile?</span>
+								</HelpBlock> }
+							</Form.Field>
+					}
 
-				<RequiredField id="country" label="Nationality" componentClass="select"
-					required={isAdvisor}>
-					<option />
-					{this.renderCountrySelectOptions(countries)}
-				</RequiredField>
+					{!edit && isAdvisor &&
+						<Alert bsStyle="warning">
+							Creating a {Settings.fields.advisor.person.name} in ANET could result in duplicate accounts if this person logs in later. If you notice duplicate accounts, please contact an ANET administrator.
+						</Alert>
+					}
+				</Fieldset>
 
-				<Form.Field id="endOfTourDate" label="End of tour" addon={CALENDAR_ICON}>
-					<DatePicker placeholder="End of Tour Date" dateFormat="DD/MM/YYYY" showClearButton={false} />
-				</Form.Field>
+				<Fieldset title="Additional information">
+					<RequiredField id="emailAddress" label="Email" required={isAdvisor}
+						humanName="Valid email address"
+						type="email"
+						validate={ this.handleEmailValidation } />
+					<Form.Field id="phoneNumber" label="Phone" />
+					<RequiredField id="rank"  componentClass="select"
+						required={isAdvisor}>
 
-				<Form.Field id="biography" componentClass={TextEditor} className="biography" />
-			</Fieldset>
-		</ValidatableForm>
+						<option />
+						{ranks.map(rank =>
+							<option key={rank} value={rank}>{rank}</option>
+						)}
+					</RequiredField>
+
+					<RequiredField id="gender" componentClass="select"
+						required={isAdvisor}>
+						<option />
+						<option value="MALE" >Male</option>
+						<option value="FEMALE" >Female</option>
+					</RequiredField>
+
+					<RequiredField id="country" label="Nationality" componentClass="select"
+						required={isAdvisor}>
+						<option />
+						{this.renderCountrySelectOptions(countries)}
+					</RequiredField>
+
+					<Form.Field id="endOfTourDate" label="End of tour" addon={CALENDAR_ICON}>
+						<DatePicker placeholder="End of Tour Date" dateFormat="DD/MM/YYYY" showClearButton={false} />
+					</Form.Field>
+
+					<Form.Field id="biography" componentClass={TextEditor} className="biography" />
+				</Fieldset>
+			</ValidatableForm>
 		</div>
 	}
 

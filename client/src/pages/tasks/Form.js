@@ -80,17 +80,15 @@ class BaseTaskForm extends ValidatableFormWrapper {
 				<Messages error={this.state.error} success={this.state.success} />
 
 				<ValidatableForm
+					title={edit ? `Edit ${taskShortLabel} ${task.shortName}` : `Create a new ${taskShortLabel}`}
 					formFor={task}
 					onChange={this.onChange}
 					onSubmit={this.onSubmit}
 					submitText={`Save ${taskShortLabel}`}
-					horizontal>
+					horizontal
+				>
 
-					<Fieldset title={edit ?
-						`Edit ${taskShortLabel} ${task.shortName}`
-						:
-						`Create a new ${taskShortLabel}`
-					}>
+					<Fieldset>
 						<RequiredField id="shortName" label={`${taskShortLabel} number`} />
 						<RequiredField id="longName" label={`${taskShortLabel} description`} />
 

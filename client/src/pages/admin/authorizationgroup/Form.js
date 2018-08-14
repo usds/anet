@@ -45,10 +45,18 @@ class AuthorizationGroupForm extends ValidatableFormWrapper {
 
 				<Messages success={this.state.success} error={this.state.error} />
 
-				<ValidatableForm formFor={authorizationGroup} onChange={this.onChange} onSubmit={this.onSubmit} horizontal submitText="Save authorization group">
-					{this.state.error && <fieldset><p>There was a problem saving this authorization group</p><p>{this.state.error}</p></fieldset>}
+				<ValidatableForm
+					title={edit ? `Edit authorization group ${authorizationGroup.name}` : "Create new authorization group"}
+					formFor={authorizationGroup}
+					onChange={this.onChange}
+					onSubmit={this.onSubmit}
+					submitText="Save authorization group"
+					horizontal
+				>
 
-					<Fieldset title={edit ? `Edit authorization group ${authorizationGroup.name}` : "Create new authorization group"}>
+				{this.state.error && <fieldset><p>There was a problem saving this authorization group</p><p>{this.state.error}</p></fieldset>}
+
+					<Fieldset>
 						<RequiredField id="name" />
 						<RequiredField id="description" componentClass="textarea" maxCharacters={250}
 							canSubmitWithError={true}

@@ -71,6 +71,7 @@ class BasePositionForm extends ValidatableFormWrapper {
 			<NavigationWarning isBlocking={this.state.isBlocking} />
 
 			<ValidatableForm
+				title={edit ? `Edit Position ${position.name}` : "Create a new Position"}
 				formFor={position}
 				onChange={this.onChange}
 				onSubmit={this.onSubmit}
@@ -80,7 +81,7 @@ class BasePositionForm extends ValidatableFormWrapper {
 
 				<Messages error={error} success={success} />
 
-				<Fieldset title={edit ? `Edit Position ${position.name}` : "Create a new Position"}>
+				<Fieldset>
 					<Form.Field id="type" disabled={this.props.edit}>
 						<ButtonToggleGroup>
 							<Button id="typeAdvisorButton" value={Position.TYPE.ADVISOR}>{Settings.fields.advisor.position.name}</Button>

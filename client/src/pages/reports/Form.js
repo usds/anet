@@ -213,13 +213,19 @@ class BaseReportForm extends ValidatableFormWrapper {
 				</div>
 			}
 
-			<ValidatableForm formFor={report} horizontal
-				onSubmit={this.onSubmit} onChange={this.onChange} onDelete={onDelete}
-				submitDisabled={hasErrors} submitText={submitText}
+			<ValidatableForm
+				title={this.props.title}
+				formFor={report}
+				onSubmit={this.onSubmit}
+				onChange={this.onChange}
+				onDelete={onDelete}
+				submitDisabled={hasErrors}
+				submitText={submitText}
 				bottomAccessory={this.state.autoSavedAt && <div>Last autosaved at {this.state.autoSavedAt.format('hh:mm:ss')}</div>}
+				horizontal
 			>
 
-				<Fieldset title={this.props.title}>
+				<Fieldset>
 					<RequiredField id="intent" label="Meeting goal (purpose)"
 						canSubmitWithError={true}
 						validateBeforeUserTouches={this.props.edit}

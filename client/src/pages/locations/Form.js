@@ -61,10 +61,18 @@ class LocationForm extends ValidatableFormWrapper {
 
 				<Messages success={this.state.success} error={this.state.error} />
 
-				<ValidatableForm formFor={location} onChange={this.onChange} onSubmit={this.onSubmit} horizontal submitText="Save location">
+				<ValidatableForm
+					title={edit ? `Edit Location ${location.name}` : "Create new Location"}
+					formFor={location}
+					onChange={this.onChange}
+					onSubmit={this.onSubmit}
+					submitText="Save location"
+					horizontal
+				>
+
 					{this.state.error && <fieldset><p>There was a problem saving this location</p><p>{this.state.error}</p></fieldset>}
 
-					<Fieldset title={edit ? `Edit Location ${location.name}` : "Create new Location"}>
+					<Fieldset>
 						<RequiredField id="name" />
 
 						<Form.Field id="status" >
