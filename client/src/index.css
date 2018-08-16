@@ -781,23 +781,30 @@ header.searchPagination {
 	z-index: 9998;
 }
 
-.sticky-top-0, .sticky-top-1, .sticky-top-2 {
+.sticky-top-0, .sticky-top-1, .sticky-top-2, .sticky-top-3 {
   position: -webkit-sticky;
   position: sticky;
-  z-index:1000;
 }
 /* used for the breadcrumb */
 .sticky-top-0 {
   top: 10px;
-  background-color: #f2f2f2;
+  z-index:9000;
 }
 /* used for the page title */
 .sticky-top-1 {
   top: 40px;
-  background-color: #f2f2f2;
+  z-index:8000;
 }
 /* used for the fieldset title, level 2 */
 .sticky-top-2 {
   top: 70px;
-  background-color: #ffffff;
+  z-index:7000;
+}
+.sticky-top-3 {
+  top: 100px;
+  z-index:6000;
+}
+
+.dropdown-menu {
+  z-index:9999;
 }
