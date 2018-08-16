@@ -130,7 +130,7 @@ class BaseOrganizationForm extends ValidatableFormWrapper {
 		const approvers = step.approvers
 		const { RequiredField } = this
 
-		return <Fieldset title={`Step ${index + 1}`} key={index}>
+		return <Fieldset title={`Step ${index + 1}`} key={index} stickyClass="sticky-top-3">
 			<Button className="pull-right" onClick={this.removeApprovalStep.bind(this, index)}>
 				X
 			</Button>

@@ -25,7 +25,9 @@ h5 {
 
 .breadcrumb {
 	background: #f9f9f9;
-	margin-top: 10px;
+	padding-top: 10px;
+	margin-bottom: 0;
+	padding-bottom: 1px;
 }
 
 button {
@@ -55,13 +57,14 @@ fieldset {
 
 h2.legend {
 	font-size: 2rem;
-	margin-top: 1rem;
+	padding-top: 1rem;
+	margin: 0;
 }
 
 .legend small {
 	float: right;
 	font-size: 1.2rem;
-	margin: 1rem 0.5rem 0 0;
+	padding: 1rem 0.5rem 0 0;
 }
 
 .legend small .btn {
@@ -73,7 +76,7 @@ h2.legend {
 }
 
 .form-top-submit {
-	margin-bottom: 1rem;
+	padding-bottom: 1rem;
 }
 
 fieldset .pagination {
@@ -787,21 +790,25 @@ header.searchPagination {
 }
 /* used for the breadcrumb */
 .sticky-top-0 {
-  top: 10px;
+  top: 0px;
+  background-color: #f2f2f2;
   z-index:9000;
 }
 /* used for the page title */
 .sticky-top-1 {
-  top: 40px;
+  top: 30px;
+  background-color: #f2f2f2;
   z-index:8000;
 }
 /* used for the fieldset title, level 2 */
 .sticky-top-2 {
-  top: 70px;
+  top: 61px;
+  background-color: #ffffff;
   z-index:7000;
 }
 .sticky-top-3 {
-  top: 100px;
+  top: 95px;
+  background-color: #ffffff;
   z-index:6000;
 }
 
