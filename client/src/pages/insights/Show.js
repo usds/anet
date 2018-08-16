@@ -285,7 +285,7 @@ class BaseInsightsShow extends Page {
         <Messages error={this.state.error} success={this.state.success} />
 
         {this.state.referenceDate &&
-          <Fieldset id={this.props.match.params.insight} title={
+          <Fieldset id={this.props.match.params.insight} stickyClass="sticky-top-1" title={
             <span>
               {insightConfig.title}
             </span>
