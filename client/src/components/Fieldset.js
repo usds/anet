@@ -1,26 +1,30 @@
 import PropTypes from 'prop-types'
 import React, { Component } from 'react'
 import {Element} from 'react-scroll'
-
+import Sticky from 'react-stickynode'
 export default class Fieldset extends Component {
 	static propTypes = {
 		title: PropTypes.node,
 		action: PropTypes.node,
-		stickyClass: PropTypes.string
+		stickyAfter: PropTypes.oneOfType([
+			PropTypes.string,
+			PropTypes.number
+		])
 	}
 
 	static defaultProps = {
-		stickyClass: "sticky-top-2"
+		stickyAfter: 200
 	}
 
 	render() {
-		let {id, title, action, stickyClass, ...props} = this.props
+		let {id, title, action, stickyAfter, ...props} = this.props
 		return <Element name={id} className="scroll-anchor-container">
-			<h2 className={`legend ${this.props.stickyClass}`}>
-				<span className="title-text">{title}</span>
-				{action && <small>{action}</small>}
-			</h2>
-
+			<Sticky enabled={true} top={stickyAfter}>
+				<h2 className="legend">
+					<span className="title-text">{title}</span>
+					{action && <small>{action}</small>}
+				</h2>
+			</Sticky>
 			<fieldset {...props} />
 		</Element>
 	}

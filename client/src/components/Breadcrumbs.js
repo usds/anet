@@ -1,6 +1,7 @@
 import React, {Component} from 'react'
 import {Breadcrumb} from 'react-bootstrap'
 import {IndexLinkContainer as Link} from 'react-router-bootstrap'
+import Sticky from 'react-stickynode'
 
 export default class Breadcrumbs extends Component {
 	makeItem(item) {
@@ -15,10 +16,12 @@ export default class Breadcrumbs extends Component {
 		let {items, ...props} = this.props
 
 		return (
-			<Breadcrumb {...props} className="sticky-top-0">
-				{this.makeItem(['ANET', '/'])}
-				{items.map(this.makeItem)}
-			</Breadcrumb>
+			<Sticky enabled={true} top={".topbar"}>
+				<Breadcrumb {...props}>
+					{this.makeItem(['ANET', '/'])}
+					{items.map(this.makeItem)}
+				</Breadcrumb>
+			</Sticky>
 		)
 	}
 }

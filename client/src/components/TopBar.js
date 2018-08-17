@@ -68,7 +68,7 @@ class BaseTopBar extends Component {
 
     render() {
         return (
-            <div style={{ flex:'0 0 auto'}}>
+            <div style={{ flex:'0 0 auto'}} className="topbar">
                 {this.props.currentUser && this.props.position && this.props.position.id === 0 && !this.props.isNewUser() && <NoPositionBanner />}
                 <GeneralBanner options={this.bannerOptions()} />
                 <SecurityBanner location={this.props.location} />
