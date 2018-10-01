@@ -97,6 +97,7 @@ export const INSIGHT_DETAILS = {
     showCalendar: false
   },
   [PROGRAM_SUMMARY_VIEW]: {
+    searchProps: _SEARCH_PROPS,
     component: ProgramSummaryView,
     navTitle: 'Program summary view',
     title: 'Program summary view',
@@ -306,7 +307,7 @@ class BaseInsightsShow extends Page {
         {this.state.referenceDate &&
           <Fullscreen enabled={this.state.isFull}
             onChange={isFull => this.setState({isFull})}>
-            <Fieldset id={this.props.match.params.insight} data-jumptarget title={
+            <Fieldset id={this.props.match.params.insight} title={
               <span>
                 {insightConfig.title}{fullscreenButton}
               </span>
