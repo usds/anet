@@ -78,30 +78,30 @@ class BaseReportForm extends ValidatableFormWrapper {
 
 	componentDidMount() {
 		API.query(/* GraphQL */`
-			locationList(f:recents, maxResults:6) {
+			locationRecents(maxResults:6) {
 				list { id, name }
 			}
-			personList(f:recents, maxResults:6) {
-				list { id, name, rank, role, position { id, name, organization {id, shortName}} }
+			personRecents(maxResults:6) {
+				list { id, name, rank, role, position { id, name, organization {id, shortName}, location {id, name} } }
 			}
-			taskList(f:recents, maxResults:6) {
+			taskRecents(maxResults:6) {
 				list { id, shortName, longName }
 			}
-			authorizationGroupList(f:recents, maxResults:6) {
+			authorizationGroupRecents(maxResults:6) {
 				list { id, name, description }
 			}
-			tagList(f:getAll) {
+			tags {
 				list { id, name, description }
 			}
 		`).then(data => {
 			let newState = {
 				recents: {
-					locations: data.locationList.list,
-					persons: data.personList.list,
-					tasks: data.taskList.list,
-					authorizationGroups: data.authorizationGroupList.list,
+					locations: data.locationRecents.list,
+					persons: data.personRecents.list,
+					tasks: data.taskRecents.list,
+					authorizationGroups: data.authorizationGroupRecents.list,
 				},
-				suggestionList: data.tagList.list.map(tag => ({id: tag.id.toString(), text: tag.name})),
+				suggestionList: data.tags.list.map(tag => ({id: tag.id.toString(), text: tag.name})),
 			}
 			this.setState(newState)
 		})
@@ -319,6 +319,7 @@ class BaseReportForm extends ValidatableFormWrapper {
 									<th style={{textAlign: 'center'}}>Primary</th>
 									<th>Name</th>
 									<th>Position</th>
+									<th>Location</th>
 									<th>Org</th>
 									<th></th>
 								</tr>
@@ -328,7 +329,7 @@ class BaseReportForm extends ValidatableFormWrapper {
 									this.renderAttendeeRow(person, idx)
 								)}
 
-								<tr className="attendee-divider-row"><td colSpan={5}><hr /></td></tr>
+								<tr className="attendee-divider-row"><td colSpan={6}><hr /></td></tr>
 
 								{Person.map(report.attendees.filter(p => p.role === Person.ROLE.PRINCIPAL), (person, idx) =>
 									this.renderAttendeeRow(person, idx)
@@ -455,6 +456,7 @@ class BaseReportForm extends ValidatableFormWrapper {
 				<LinkTo person={person}/>
 			</td>
 			<td><LinkTo position={person.position} /></td>
+			<td><LinkTo whenUnspecified="" position={person.position && person.position.location} /></td>
 			<td><LinkTo whenUnspecified="" organization={person.position && person.position.organization} /> </td>
 			<td onClick={this.removeAttendee.bind(this, person)} id={'attendeeDelete_' + person.role + "_" + idx} >
 				<span style={{cursor: 'pointer'}}><img src={REMOVE_ICON} height={14} alt="Remove attendee" /></span>
@@ -554,7 +556,7 @@ class BaseReportForm extends ValidatableFormWrapper {
 		delete report.primaryPrincipal
 		delete report.primaryAdvisor
 		report.attendees = report.attendees.map(a =>
-			Object.without(a, 'position')
+			Object.without(a, 'position', '_loaded')
 		)
 
 		if (report.location) {
