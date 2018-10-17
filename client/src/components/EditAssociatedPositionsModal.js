@@ -6,6 +6,7 @@ import {Modal, Button, Table} from 'react-bootstrap'
 import {Position,Person} from 'models'
 import API from 'api'
 import Settings from 'Settings'
+import _isEqual from 'lodash/isEqual'
 
 import Messages from'components/Messages'
 import AppContext from 'components/AppContext'
@@ -24,8 +25,15 @@ class BaseEditAssociatedPositionsModal extends Component {
 	constructor(props) {
 		super(props)
 		this.state = {
+			success: null,
 			error: null,
 			associatedPositions: props.position.associatedPositions.slice()
+		}
+	}
+
+	componentDidUpdate(prevProps, prevState) {
+		if (!_isEqual(prevProps.position.associatedPositions, this.props.position.associatedPositions)) {
+			this.setState({associatedPositions: this.props.position.associatedPositions.slice()})
 		}
 	}
 
@@ -142,17 +150,24 @@ class BaseEditAssociatedPositionsModal extends Component {
 		position.associatedPositions = this.state.associatedPositions
 		delete position.previousPeople
 		delete position.person //prevent any changes to person.
-
-		API.send('/api/positions/updateAssociatedPosition', position)
-			.then(resp =>
-				this.props.onSuccess()
+		const graphql = 'updateAssociatedPosition(position: $position)'
+		const variables = { position: position }
+		const variableDef = '($position: PositionInput!)'
+		API.mutation(graphql, variables, variableDef)
+			.then(
+				data => this.props.onSuccess()
 			).catch(error => {
-				this.setState({error: error})
+				this.setState({success: null, error: error})
 			})
 	}
 
 	@autobind
 	close() {
+		// Reset state before closing (cancel)
+		this.setState({
+			error: null,
+			associatedPositions: this.props.position.associatedPositions.slice()
+		})
 		this.props.onCancel()
 	}
 }
