@@ -28,3 +28,17 @@
     display: none;
   }
 }
+
+.mosaic.mosaic-blueprint-theme {
+  background: #fff;
+}
+
+.mosaic-root {
+  right: 0px;
+  left: 0px;
+}
+
+.bp3-navbar
+{
+  margin: 3px;
+}

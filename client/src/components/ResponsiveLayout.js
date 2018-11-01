@@ -26,7 +26,7 @@ const mainViewportContainer = {
 	overflowY: 'auto',
 	overflowX: 'hidden',
 	paddingTop: 5,
-	paddingLeft: 18,
+	paddingLeft: 0,
 	paddingRight: 18,
 }
 const sidebarContainer = {
