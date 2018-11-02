@@ -24,7 +24,7 @@ export default class ProgramSummaryView extends React.Component {
     findParents = task => {
         const parents = []
         const matchParentTask = element => {
-            if (element.id === task.customFieldRef1.id) 
+            if (element.uuid === task.customFieldRef1.uuid) 
                 return element
         }
         while (task.customFieldRef1) 
@@ -120,14 +120,26 @@ export default class ProgramSummaryView extends React.Component {
 
     fetchData() {
         const chartQuery = API.query(/* GraphQL */
-        `taskList (f:getAll pageSize:10000) { 
-            totalCount, list { id, shortName, longName, customFieldEnum1, customFieldEnum2, plannedCompletion, customFieldRef1 { id }, }
-        }`)
+        `  tasks(pageNum: 0, pageSize: 1000) {
+            totalCount
+            list {
+              uuid
+              shortName
+              longName
+              customFieldEnum1
+              customFieldEnum2
+              plannedCompletion
+              customFieldRef1 {
+                uuid
+              }
+            }
+          }
+        `)
 
         Promise
             .all([chartQuery])
             .then(values => {
-                const taskList = values[0].taskList.list
+                const taskList = values[0].tasks.list
                 this.setState({data: taskList})
             })
     }

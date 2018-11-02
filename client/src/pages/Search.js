@@ -32,7 +32,7 @@ import ORGANIZATIONS_ICON from 'resources/organizations.png'
 
 import SubNav from 'components/SubNav'
 
-import { DEFAULT_PAGE_PROPS, DEFAULT_SEARCH_PROPS } from 'actions'
+import { DEFAULT_PAGE_PROPS, CLEAR_SEARCH_PROPS } from 'actions'
 import { withRouter } from 'react-router-dom'
 import { connect } from 'react-redux'
 import _isEqualWith from 'lodash/isEqualWith'
@@ -42,6 +42,9 @@ import { jumpToTop } from 'components/Page'
 
 import AppContext from 'components/AppContext'
 import Scrollspy from 'react-scrollspy'
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import 'components/reactToastify.css'
 
 const SEARCH_CONFIG = {
 	reports : {
@@ -56,35 +59,35 @@ const SEARCH_CONFIG = {
 		sortBy: 'NAME',
 		sortOrder: 'ASC',
 		variableType: 'PersonSearchQueryInput',
-		fields: 'id, name, rank, emailAddress, role , position { id, name, organization { id, shortName} }'
+		fields: 'uuid, name, rank, emailAddress, role , position { uuid, name, code, location { uuid, name }, organization { uuid, shortName} }'
 	},
 	positions : {
 		listName: 'positions: positionList',
 		sortBy: 'NAME',
 		sortOrder: 'ASC',
 		variableType: 'PositionSearchQueryInput',
-		fields: 'id , name, code, type, status, organization { id, shortName}, person { id, name, rank }'
+		fields: 'uuid , name, code, type, status, location { uuid, name }, organization { uuid, shortName}, person { uuid, name, rank }'
 	},
 	tasks : {
 		listName: 'tasks: taskList',
 		sortBy: 'NAME',
 		sortOrder: 'ASC',
 		variableType: 'TaskSearchQueryInput',
-		fields: 'id, shortName, longName'
+		fields: 'uuid, shortName, longName'
 	},
 	locations : {
 		listName: 'locations: locationList',
 		sortBy: 'NAME',
 		sortOrder: 'ASC',
 		variableType: 'LocationSearchQueryInput',
-		fields : 'id, name, lat, lng'
+		fields: 'uuid, name, lat, lng'
 	},
 	organizations : {
 		listName: 'organizations: organizationList',
 		sortBy: 'NAME',
 		sortOrder: 'ASC',
 		variableType: 'OrganizationSearchQueryInput',
-		fields: 'id, shortName, longName, identificationCode, type'
+		fields: 'uuid, shortName, longName, identificationCode, type'
 	}
 }
 
@@ -95,8 +98,17 @@ class BaseSearch extends Page {
 		scrollspyOffset: PropTypes.number,
 	}
 
+	successToastId = 'success-message';
+	errorToastId = 'error-message';
+	notify = (success) => {
+		if (!success) { return }
+		toast.success(success, {
+			toastId: this.successToastId
+		})
+	}
+
 	constructor(props) {
-		super(props, Object.assign({}, DEFAULT_PAGE_PROPS), Object.assign({}, DEFAULT_SEARCH_PROPS, {clearSearchQuery: false}))
+		super(props)
 
 		Object.assign(this.state, {
 			success: null,
@@ -173,11 +185,14 @@ class BaseSearch extends Page {
 		return this._dataFetcher(props, this._fetchDataCallback)
 	}
 
-	render() {
-		const results = this.state.results
-		const error = this.state.error
-		const success = this.state.success
+	componentDidMount() {
+		super.componentDidMount()
+		const { success } = this.state
+		this.notify(success)
+	}
 
+	render() {
+		const { results, success, error } = this.state
 		const numReports = results.reports ? results.reports.totalCount : 0
 		const numPeople = results.people ? results.people.totalCount : 0
 		const numPositions = results.positions ? results.positions.totalCount : 0
@@ -193,6 +208,7 @@ class BaseSearch extends Page {
 		const taskShortLabel = Settings.fields.task.shortLabel
 		return (
 			<div>
+				<ToastContainer/>
 				<SubNav subnavElemId="search-nav">
 					<div><Button onClick={this.props.history.goBack} bsStyle="link">&lt; Return to previous page</Button></div>
 					<Nav stacked bsStyle="pills">
@@ -242,7 +258,7 @@ class BaseSearch extends Page {
 
 				<Breadcrumbs items={[['Search results', '']]} />
 
-				<Messages error={error} success={success} />
+				<Messages error={error} /> {/* success is shown through toast */}
 
 				{this.state.query && <h2 className="only-show-for-print">Search query: '{this.state.query}'</h2>}
 
@@ -336,17 +352,19 @@ class BaseSearch extends Page {
 				<tr>
 						<th>Name</th>
 						<th>Position</th>
+						<th>Location</th>
 						<th>Org</th>
 					</tr>
 				</thead>
 				<tbody>
 					{Person.map(this.state.results.people.list, person =>
-						<tr key={person.id}>
+						<tr key={person.uuid}>
 							<td>
 								<img src={person.iconUrl()} alt={person.role} height={20} className="person-icon" />
 								<LinkTo person={person}/>
 							</td>
-							<td>{person.position && <LinkTo position={person.position} />}</td>
+							<td><LinkTo position={person.position} />{person.position && person.position.code ? `, ${person.position.code}`: ``}</td>
+							<td><LinkTo whenUnspecified="" anetLocation={person.position && person.position.location} /></td>
 							<td>{person.position && person.position.organization && <LinkTo organization={person.position.organization} />}</td>
 						</tr>
 					)}
@@ -369,7 +387,7 @@ class BaseSearch extends Page {
 				</thead>
 				<tbody>
 					{Organization.map(this.state.results.organizations.list, org =>
-						<tr key={org.id}>
+						<tr key={org.uuid}>
 							<td><LinkTo organization={org} /></td>
 							<td>{org.longName}</td>
 							<td>{org.identificationCode}</td>
@@ -399,7 +417,7 @@ class BaseSearch extends Page {
 				</thead>
 				<tbody>
 					{this.state.results.locations.list.map(loc =>
-						<tr key={loc.id}>
+						<tr key={loc.uuid}>
 							<td><LinkTo anetLocation={loc} /></td>
 						</tr>
 					)}
@@ -419,7 +437,7 @@ class BaseSearch extends Page {
 				</thead>
 				<tbody>
 					{Task.map(this.state.results.tasks.list, task =>
-						<tr key={task.id}>
+						<tr key={task.uuid}>
 							<td><LinkTo task={task} >{task.shortName} {task.longName}</LinkTo></td>
 						</tr>
 					)}
@@ -462,12 +480,12 @@ class BaseSearch extends Page {
 			savedSearch.objectType = this.props.searchQuery.objectType.toUpperCase()
 		}
 		const operation = 'createSavedSearch'
-		let graphql = operation + '(savedSearch: $savedSearch) { id }'
+		let graphql = operation + '(savedSearch: $savedSearch) { uuid }'
 		const variables = { savedSearch: savedSearch }
 		const variableDef = '($savedSearch: SavedSearchInput!)'
 		API.mutation(graphql, variables, variableDef)
 			.then(data => {
-				if (data[operation].id) {
+				if (data[operation].uuid) {
 					this.setState({
 						success: 'Search saved',
 						error: null,

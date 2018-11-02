@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types'
 import React, { Component } from 'react'
+import { mapDispatchToProps, propTypes as pagePropTypes } from 'components/Page'
 import {Nav as BSNav, NavItem, NavDropdown, MenuItem} from 'react-bootstrap'
-import {IndexLinkContainer as Link} from 'react-router-bootstrap'
+import {IndexLinkContainer as Link, LinkContainer} from 'react-router-bootstrap'
 import Settings from 'Settings'
 import LinkTo from 'components/LinkTo'
 import pluralize from 'pluralize'
@@ -11,11 +12,13 @@ import {INSIGHTS, INSIGHT_DETAILS} from 'pages/insights/Show'
 
 import AppContext from 'components/AppContext'
 import { withRouter } from 'react-router-dom'
+import { connect } from 'react-redux'
 
 import {ScrollLink, scrollSpy} from 'react-scroll'
 
 class BaseNav extends Component {
 	static propTypes = {
+		...pagePropTypes,
 		currentUser: PropTypes.instanceOf(Person),
 		appSettings: PropTypes.object,
 		showFloatingMenu: PropTypes.func,
@@ -41,10 +44,10 @@ class BaseNav extends Component {
 		const inInsights = path.indexOf('/insights') === 0
 
 		const myOrg = currentUser.position ? currentUser.position.organization : null
-		let orgId, myOrgId
+		let orgUuid, myOrgUuid
 		if (inOrg) {
-			orgId = +path.split('/')[2]
-			myOrgId = myOrg && +myOrg.id
+			orgUuid = path.split('/')[2]
+			myOrgUuid = myOrg && myOrg.uuid
 		}
 
 		const showFloatingMenu = this.props.showFloatingMenu
@@ -88,7 +91,7 @@ class BaseNav extends Component {
 
 				<BSNav id="search-nav"></BSNav>
 
-				{currentUser.id && <Link to={{pathname: '/reports/mine'}}>
+				{currentUser.uuid && <Link to={{pathname: '/reports/mine'}}>
 					<NavItem>My reports</NavItem>
 				</Link>}
 
@@ -101,15 +104,15 @@ class BaseNav extends Component {
 					</BSNav>
 				}
 
-				{myOrg && <Link to={Organization.pathFor(myOrg)}>
+				{myOrg && <Link to={Organization.pathFor(myOrg)} onClick={this.props.clearSearchQuery}>
 					<NavItem id="my-organization">My organization <br /><small>{myOrg.shortName}</small></NavItem>
 				</Link>}
 
 				<BSNav id="myorg-nav"></BSNav>
 
-				<NavDropdown title={Settings.fields.advisor.org.allOrgName} id="advisor-organizations" active={inOrg && orgId !== myOrgId}>
+				<NavDropdown title={Settings.fields.advisor.org.allOrgName} id="advisor-organizations" active={inOrg && orgUuid !== myOrgUuid}>
 					{Organization.map(organizations, org =>
-						<LinkTo organization={org} componentClass={Link} key={org.id}>
+						<LinkTo organization={org} componentClass={Link} key={org.uuid} onClick={this.props.clearSearchQuery}>
 							<MenuItem>{org.shortName}</MenuItem>
 						</LinkTo>
 					)}
@@ -128,15 +131,15 @@ class BaseNav extends Component {
 				}
 
 				{currentUser.isAdmin() &&
-					<Link to="/admin">
+					<LinkContainer to="/admin">
 						<NavItem>Admin</NavItem>
-					</Link>
+					</LinkContainer>
 				}
 
 				{inAdmin &&
 					<BSNav>
-						<Link to={"/admin/mergePeople"}><NavItem>Merge people</NavItem></Link>
-						<Link to={"/admin/authorizationGroups"}><NavItem>Authorization groups</NavItem></Link>
+						<LinkContainer to={"/admin/mergePeople"}><NavItem>Merge people</NavItem></LinkContainer>
+						<LinkContainer to={"/admin/authorizationGroups"}><NavItem>Authorization groups</NavItem></LinkContainer>
 					</BSNav>
 				}
 
@@ -162,12 +165,16 @@ class BaseNav extends Component {
 	}
 }
 
+const mapStateToProps = (state, ownProps) => ({
+	searchQuery: state.searchQuery
+})
+
 const Nav = (props) => (
 	<AppContext.Consumer>
 		{context =>
-			<BaseNav appSettings={context.appSettings} currentUser={context.currentUser} showFloatingMenu={context.showFloatingMenu} {...props} />
+			<BaseNav appSettings={context.appSettings} currentUser={context.currentUser} {...props} />
 		}
 	</AppContext.Consumer>
 )
 
-export default withRouter(Nav)
+export default connect(mapStateToProps, mapDispatchToProps, null, { pure: false })(withRouter(Nav))

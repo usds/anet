@@ -1,4 +1,5 @@
-import React from 'react'
+import React, {Component} from 'react'
+import PropTypes from 'prop-types'
 
 import {Route, Switch, Redirect} from 'react-router'
 import Home from 'pages/Home'
@@ -46,7 +47,16 @@ import InsightsShow from  'pages/insights/Show'
 import OnboardingShow from 'pages/onboarding/Show'
 import OnboardingEdit from 'pages/onboarding/Edit'
 
-const Routing = () => (
+import AppContext from 'components/AppContext'
+import {Person} from 'models'
+
+class BaseRouting extends Component {
+  static propTypes = {
+	currentUser: PropTypes.instanceOf(Person),
+  }
+
+  render() {
+	return (
 	<Switch>
 		<Route exact path="/" component={Home} />
 		<Route path="/search" component={Search} />
@@ -58,10 +68,10 @@ const Routing = () => (
 			render={({ match: { url } }) => (
 			<Switch>
 				<Route path={`${url}/new`} component={ReportNew} />
-				<Route path={`${url}/:id/edit`} component={ReportEdit} />
-				<Route path={`${url}/:id/min`} component={ReportMinimal} />
+				<Route path={`${url}/:uuid/edit`} component={ReportEdit} />
+				<Route path={`${url}/:uuid/min`} component={ReportMinimal} />
 				<Route path={`${url}/mine`} component={MyReports} />
-				<Route path={`${url}/:id`} component={ReportShow} />
+				<Route path={`${url}/:uuid`} component={ReportShow} />
 			</Switch>
 		)}
 		/>
@@ -70,8 +80,8 @@ const Routing = () => (
 			render={({ match: { url } }) => (
 			<Switch>
 				<Route path={`${url}/new`} component={PersonNew} />
-				<Route path={`${url}/:id/edit`} component={PersonEdit} />
-				<Route path={`${url}/:id`} component={PersonShow} />
+				<Route path={`${url}/:uuid/edit`} component={PersonEdit} />
+				<Route path={`${url}/:uuid`} component={PersonShow} />
 			</Switch>
 		)}
 		/>
@@ -80,8 +90,8 @@ const Routing = () => (
 			render={({ match: { url } }) => (
 			<Switch>
 				<Route path={`${url}/new`} component={OrganizationNew} />
-				<Route path={`${url}/:id/edit`} component={OrganizationEdit} />
-				<Route path={`${url}/:id/:action?`} component={OrganizationShow} />
+				<Route path={`${url}/:uuid/edit`} component={OrganizationEdit} />
+				<Route path={`${url}/:uuid/:action?`} component={OrganizationShow} />
 			</Switch>
 		)}
 		/>
@@ -90,8 +100,8 @@ const Routing = () => (
 			render={({ match: { url } }) => (
 			<Switch>
 				<Route path={`${url}/new`} component={LocationNew} />
-				<Route path={`${url}/:id/edit`} component={LocationEdit} />
-				<Route path={`${url}/:id`} component={LocationShow} />
+				<Route path={`${url}/:uuid/edit`} component={LocationEdit} />
+				<Route path={`${url}/:uuid`} component={LocationShow} />
 			</Switch>
 		)}
 		/>
@@ -100,8 +110,8 @@ const Routing = () => (
 			render={({ match: { url } }) => (
 			<Switch>
 				<Route path={`${url}/new`} component={PositionNew} />
-				<Route path={`${url}/:id/edit`} component={PositionEdit} />
-				<Route path={`${url}/:id`} component={PositionShow} />
+				<Route path={`${url}/:uuid/edit`} component={PositionEdit} />
+				<Route path={`${url}/:uuid`} component={PositionShow} />
 			</Switch>
 		)}
 		/>
@@ -110,8 +120,8 @@ const Routing = () => (
 			render={({ match: { url } }) => (
 			<Switch>
 				<Route path={`${url}/new`} component={TaskNew} />
-				<Route path={`${url}/:id/edit`} component={TaskEdit} />
-				<Route path={`${url}/:id`} component={TaskShow} />
+				<Route path={`${url}/:uuid/edit`} component={TaskEdit} />
+				<Route path={`${url}/:uuid`} component={TaskShow} />
 			</Switch>
 		)}
 		/>
@@ -123,8 +133,8 @@ const Routing = () => (
 				<Route path={`${url}/mergePeople`} component={MergePeople} />
 				<Route exact path={`${url}/authorizationGroups`} component={AuthorizationGroups} />
 				<Route path={`${url}/authorizationGroups/new`} component={AuthorizationGroupNew} />
-				<Route path={`${url}/authorizationGroups/:id/edit`} component={AuthorizationGroupEdit} />
-				<Route path={`${url}/authorizationGroups/:id`} component={AuthorizationGroupShow} />
+				<Route path={`${url}/authorizationGroups/:uuid/edit`} component={AuthorizationGroupEdit} />
+				<Route path={`${url}/authorizationGroups/:uuid`} component={AuthorizationGroupShow} />
 			</Switch>
 		)}
 		/>
@@ -139,7 +149,7 @@ const Routing = () => (
 		<Route
 			path="/onboarding"
 			render={({ match: { url } }) => (
-				this.state.currentUser.isNewUser() ? (
+				this.props.currentUser.isNewUser() ? (
 					<Switch>
 						<Route exact path={`${url}/`} component={OnboardingShow} />
 						<Route path={`${url}/edit`} component={OnboardingEdit} />
@@ -151,6 +161,16 @@ const Routing = () => (
 		/>
 		<Route path="*" component={PageMissing} />
 	</Switch>
+	)
+  }
+}
+
+const Routing = (props) => (
+  <AppContext.Consumer>
+	{context =>
+	  <BaseRouting currentUser={context.currentUser} {...props} />
+	}
+  </AppContext.Consumer>
 )
 
 export default Routing

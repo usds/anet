@@ -43,7 +43,7 @@ test('Draft and submit a report', async t => {
         'Principal primary attendee checkbox should be checked'
     )
     await assertElementText(t, $principalName, 'CIV TOPFERNESS, Christopf')
-    await assertElementText(t, $principalPosition, 'Planning Captain')
+    await assertElementText(t, $principalPosition, 'Planning Captain, MOD-FO-00004')
     await assertElementText(t, $principalOrg, 'MoD')
 
     let $tasksAutocomplete = await pageHelpers.chooseAutocompleteOption('#tasks', '1.1.B')
@@ -73,7 +73,7 @@ test('Draft and submit a report', async t => {
     await pageHelpers.assertReportShowStatusText(t, "This is a DRAFT report and hasn't been submitted.")
 
     let currentPathname = await t.context.getCurrentPathname()
-    t.regex(currentPathname, /reports\/\d+/, 'URL is updated to reports/show page')
+    t.regex(currentPathname, /reports\/[0-9a-f-]+/, 'URL is updated to reports/show page')
 
     let $submitReportButton = await $('#submitReportButton')
     await $submitReportButton.click()
@@ -83,9 +83,10 @@ test('Draft and submit a report', async t => {
     let $approveButton = await $('.approve-button')
     await $approveButton.click()
 
+    const $notificationApproved = await t.context.driver.findElement(By.css('div[role=alert]'))
     await assertElementText(
         t, 
-        await $('.alert'), 
+        $notificationApproved,
         'Successfully approved report.', 
         'Clicking the approve button displays a message telling the user that the action was successful.'
     )
@@ -103,9 +104,10 @@ test('Draft and submit a report', async t => {
     let $rebeccaApproveButton = await $('.approve-button')
     await $rebeccaApproveButton.click()
 
+    const $notificationDailyRollup = await t.context.driver.findElement(By.css('div[role=alert]'))
     await assertElementText(
         t, 
-        await $('.alert'), 
+        $notificationDailyRollup,
         'Successfully approved report. It has been added to the daily rollup', 
         'When a report is approved, the user sees a message indicating that it has been added to the daily rollup'
     )

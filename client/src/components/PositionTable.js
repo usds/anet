@@ -61,6 +61,7 @@ export default class PositionTable extends Component {
 					<thead>
 						<tr>
 							<th>Name</th>
+							<th>Location</th>
 							<th>Org</th>
 							<th>Current Occupant</th>
 							<th>Status</th>
@@ -72,15 +73,16 @@ export default class PositionTable extends Component {
 							let nameComponents =  []
 							pos.name && nameComponents.push(pos.name)
 							pos.code && nameComponents.push(pos.code)
-							return <tr key={pos.id}>
+							return <tr key={pos.uuid}>
 									<td>
 										<img src={pos.iconUrl()} alt={pos.type} height={20} className="person-icon" />
 										<LinkTo position={pos} >{nameComponents.join(' - ')}</LinkTo>
 									</td>
+									<td><LinkTo anetLocation={pos.location} /></td>
 									<td>{pos.organization && <LinkTo organization={pos.organization} />}</td>
 									<td>{pos.person && <LinkTo person={pos.person} />}</td>
 									<td>{utils.sentenceCase(pos.status)}</td>
-									{this.props.showDelete && <td onClick={this.props.onDelete.bind(this, pos)} id={'positionDelete_' + pos.id} >
+									{this.props.showDelete && <td onClick={this.props.onDelete.bind(this, pos)} id={'positionDelete_' + pos.uuid} >
 										<span style={{cursor: 'pointer'}}><img src={REMOVE_ICON} height={14} alt="Remove position" /></span>
 									</td>}
 								</tr>

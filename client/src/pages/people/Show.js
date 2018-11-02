@@ -37,7 +37,7 @@ class BasePersonShow extends Page {
 		super(props)
 		this.state = {
 			person: new Person({
-				id: props.match.params.id,
+				uuid: props.match.params.uuid,
 				previousPositions: [],
 			}),
 			authoredReports: null,
@@ -51,11 +51,11 @@ class BasePersonShow extends Page {
 		setMessages(props,this.state)
 	}
 
-	getAuthoredReportsPart(personId) {
+	getAuthoredReportsPart(personUuid) {
 		let query = {
 			pageNum: this.authoredReportsPageNum,
 			pageSize: 10,
-			authorId : personId
+			authorUuid : personUuid
 		}
 		let part = new GQL.Part(/* GraphQL */`
 			authoredReports: reportList(query: $authorQuery) {
@@ -67,11 +67,11 @@ class BasePersonShow extends Page {
 		return part
 	}
 
-	getAttendedReportsPart(personId) {
+	getAttendedReportsPart(personUuid) {
 		let query = {
 			pageNum: this.attendedReportsPageNum,
 			pageSize: 10,
-			attendeeId: personId
+			attendeeUuid: personUuid
 		}
 		let part = new GQL.Part(/* GraphQL */ `
 			attendedReports: reportList(query: $attendeeQuery) {
@@ -85,27 +85,27 @@ class BasePersonShow extends Page {
 
 	fetchData(props) {
 		let personPart = new GQL.Part(/* GraphQL */`
-			person(id:${props.match.params.id}) {
-				id,
+			person(uuid:"${props.match.params.uuid}") {
+				uuid,
 				name, rank, role, status, emailAddress, phoneNumber, domainUsername,
 				biography, country, gender, endOfTourDate,
 				position {
-					id,
+					uuid,
 					name,
 					type,
 					organization {
-						id, shortName
+						uuid, shortName
 					},
 					associatedPositions {
-						id, name,
-						person { id, name, rank },
-						organization { id, shortName }
+						uuid, name,
+						person { uuid, name, rank },
+						organization { uuid, shortName }
 					}
 				}
-				previousPositions { startTime, endTime, position { id, name }}
+				previousPositions { startTime, endTime, position { uuid, name }}
 		}`)
-		let authoredReportsPart = this.getAuthoredReportsPart(props.match.params.id)
-		let attendedReportsPart = this.getAttendedReportsPart(props.match.params.id)
+		let authoredReportsPart = this.getAuthoredReportsPart(props.match.params.uuid)
+		let attendedReportsPart = this.getAttendedReportsPart(props.match.params.uuid)
 
 		return GQL.run([personPart, authoredReportsPart, attendedReportsPart]).then(data =>
 			this.setState({
@@ -128,7 +128,7 @@ class BasePersonShow extends Page {
 		//SuperUsers can edit people in their org, their descendant orgs, or un-positioned people.
 		const { currentUser } = this.props
 		const isAdmin = currentUser && currentUser.isAdmin()
-		const hasPosition = position && position.id
+		const hasPosition = position && position.uuid
 		const canEdit = Person.isEqual(currentUser, person) ||
 			isAdmin ||
 			(hasPosition && currentUser.isSuperUserForOrg(position.organization)) ||
@@ -187,15 +187,15 @@ class BasePersonShow extends Page {
 
 					<Fieldset title="Position" >
 						<Fieldset title="Current Position" id="current-position"
-							className={(!position || !position.id) ? 'warning' : undefined}
-							action={position && position.id && canChangePosition &&
+							className={(!position || !position.uuid) ? 'warning' : undefined}
+							action={position && position.uuid && canChangePosition &&
 								<div>
 									<LinkTo position={position} edit button="default" >Edit position details</LinkTo>
 									<Button onClick={this.showAssignPositionModal} className="change-assigned-position">
 										Change assigned position
 									</Button>
 								</div>}>
-							{position && position.id
+							{position && position.uuid
 								? this.renderPosition(position)
 								: this.renderPositionBlankSlate(person)
 							}
@@ -209,7 +209,7 @@ class BasePersonShow extends Page {
 							}
 						</Fieldset>
 
-						{position && position.id &&
+						{position && position.uuid &&
 							<Fieldset title={`Assigned ${assignedRole}`} action={canChangePosition && <Button onClick={this.showAssociatedPositionsModal}>Change assigned {assignedRole}</Button>}>
 								{this.renderCounterparts(position)}
 								{canChangePosition &&
@@ -287,7 +287,7 @@ class BasePersonShow extends Page {
 					</thead>
 					<tbody>
 						{Position.map(position.associatedPositions, assocPos =>
-							<tr key={assocPos.id}>
+							<tr key={assocPos.uuid}>
 								<td>{assocPos.person && <LinkTo person={assocPos.person} />}</td>
 								<td><LinkTo position={assocPos} /></td>
 								<td><LinkTo organization={assocPos.organization} /></td>
@@ -347,7 +347,7 @@ class BasePersonShow extends Page {
 	@autobind
 	goToAuthoredPage(pageNum) {
 		this.authoredReportsPageNum = pageNum
-		let part = this.getAuthoredReportsPart(this.state.person.id)
+		let part = this.getAuthoredReportsPart(this.state.person.uuid)
 		GQL.run([part]).then(data =>
 			this.setState({authoredReports: data.authoredReports})
 		)
@@ -356,7 +356,7 @@ class BasePersonShow extends Page {
 	@autobind
 	goToAttendedPage(pageNum) {
 		this.attendedReportsPageNum = pageNum
-		let part = this.getAttendedReportsPart(this.state.person.id)
+		let part = this.getAttendedReportsPart(this.state.person.uuid)
 		GQL.run([part]).then(data =>
 			this.setState({attendedReports: data.attendedReports})
 		)

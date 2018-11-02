@@ -59,10 +59,10 @@ export default class Page extends Component {
 		const pp = pageProps || DEFAULT_PAGE_PROPS
 		const sp = searchProps || DEFAULT_SEARCH_PROPS
 		if (typeof props.setPageProps === 'function') {
-			props.setPageProps(pp)
+			props.setPageProps(Object.assign({}, pp))
 		}
 		if (typeof props.setSearchProps === 'function') {
-			props.setSearchProps(sp)
+			props.setSearchProps(Object.assign({}, sp))
 		}
 		if (typeof props.clearSearchQuery === 'function' && sp.clearSearchQuery) {
 			props.clearSearchQuery()
@@ -122,7 +122,7 @@ export default class Page extends Component {
 	render() {
 		if (this.state.notFound) {
 			let modelName = this.constructor.modelName
-			let text = modelName ? `${modelName} #${this.props.match.params.id}` : `Page`
+			let text = modelName ? `${modelName} #${this.props.match.params.uuid}` : `Page`
 			return <NotFound text={`${text} not found.`} />
 		} else if (this.state.invalidRequest) {
 			return <NotFound text="There was an error processing this request. Please contact an administrator." />

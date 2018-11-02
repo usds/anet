@@ -20,7 +20,7 @@ import Fullscreen from "react-full-screen"
 import {Button} from 'react-bootstrap'
 
 import {Report} from 'models'
-import { DEFAULT_PAGE_PROPS, DEFAULT_SEARCH_PROPS, SEARCH_OBJECT_TYPES } from 'actions'
+import { DEFAULT_PAGE_PROPS, CLEAR_SEARCH_PROPS, SEARCH_OBJECT_TYPES } from 'actions'
 import Settings from 'Settings'
 import AppContext from 'components/AppContext'
 import { connect } from 'react-redux'
@@ -43,7 +43,7 @@ export const INSIGHTS = [
 
 const _SEARCH_PROPS = Object.assign(
 	{},
-	DEFAULT_SEARCH_PROPS,
+	CLEAR_SEARCH_PROPS,
 	{onSearchGoToSearchPage: false, searchObjectTypes: [SEARCH_OBJECT_TYPES.REPORTS]}
 )
 
@@ -52,7 +52,7 @@ export const INSIGHT_DETAILS = {
     searchProps: _SEARCH_PROPS,
     component: PendingApprovalReports,
     navTitle: 'Pending Approval Reports',
-    title: 'Number of Pending Approval Reports',
+    title: '',
     dateRange: false,
     showCalendar: true
   },
@@ -60,7 +60,7 @@ export const INSIGHT_DETAILS = {
     searchProps: _SEARCH_PROPS,
     component: CancelledEngagementReports,
     navTitle: 'Cancelled Engagement Reports',
-    title: 'Number of Cancelled Engagement Reports',
+    title: '',
     dateRange: false,
     showCalendar: true
   },
@@ -68,7 +68,7 @@ export const INSIGHT_DETAILS = {
     searchProps: _SEARCH_PROPS,
     component: ReportsByTask,
     navTitle: 'Reports by Task',
-    title: 'Number of Reports by Task',
+    title: '',
     dateRange: false,
     showCalendar: true
   },
@@ -76,7 +76,7 @@ export const INSIGHT_DETAILS = {
     searchProps: _SEARCH_PROPS,
     component: ReportsByDayOfWeek,
     navTitle: 'Reports by Day of the Week',
-    title: 'Number of Reports by Day of the Week',
+    title: '',
     dateRange: true,
     showCalendar: false
   },
@@ -84,12 +84,12 @@ export const INSIGHT_DETAILS = {
     searchProps: _SEARCH_PROPS,
     component: FutureEngagementsByLocation,
     navTitle: 'Future Engagements by Location',
-    title: 'Number of Future Engagements by Location',
+    title: '',
     dateRange: true,
     onlyShowBetween: true,
   },
   [ADVISOR_REPORTS]: {
-    searchProps: DEFAULT_SEARCH_PROPS,
+    searchProps: CLEAR_SEARCH_PROPS,
     component: FilterableAdvisorReportsTable,
     navTitle: `${Settings.fields.advisor.person.name} Reports`,
     title: `${Settings.fields.advisor.person.name} Reports`,
@@ -138,7 +138,7 @@ class BaseInsightsShow extends Page {
 
   constructor(props) {
     const insightConfig = INSIGHT_DETAILS[props.match.params.insight]
-    super(props, Object.assign({}, DEFAULT_PAGE_PROPS), Object.assign({}, insightConfig.searchProps))
+    super(props, DEFAULT_PAGE_PROPS, insightConfig.searchProps)
     this.state = {isFull: false,...this.insightDefaultDates}
   }
 
@@ -299,20 +299,20 @@ class BaseInsightsShow extends Page {
     const insightPath = '/insights/' + this.props.match.params.insight
     const queryParams = this.getSearchQuery()
     const fullscreenButton = <Button onClick={this.toggleFull} style={calendarButtonCss}><img src={FULLSCREEN_ICON} height={16} alt="Switch to fullscreen mode" /></Button>
+    const flexStyle = {display: 'flex', flexDirection: 'column', height: '100%', flex: 1}
 
     return (
-      <div>
-        <Breadcrumbs items={[['Insights ' + insightConfig.title, insightPath]]} />
+      <div style={flexStyle}>
+        <Breadcrumbs items={[['Insights ' + insightConfig.navTitle, insightPath]]} />
         <Messages error={this.state.error} success={this.state.success} />
         {this.state.referenceDate &&
           <Fullscreen enabled={this.state.isFull}
             onChange={isFull => this.setState({isFull})}>
-            <Fieldset id={this.props.match.params.insight} title={
-              <span>
-                {insightConfig.title}{fullscreenButton}
-              </span>
-              }>
+            <Fieldset id={this.props.match.params.insight} title={<span>
+              {insightConfig.title}{fullscreenButton}
+            </span>} style={flexStyle}>
               <InsightComponent
+                style={flexStyle}
                 queryParams={queryParams}
                 date={this.state.referenceDate.clone()}
               />
