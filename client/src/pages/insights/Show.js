@@ -9,14 +9,11 @@ import FutureEngagementsByLocation from 'components/FutureEngagementsByLocation'
 import Breadcrumbs from 'components/Breadcrumbs'
 import Messages from 'components/Messages'
 import Fieldset from 'components/Fieldset'
-import CalendarButton from 'components/CalendarButton'
 import autobind from 'autobind-decorator'
 import moment from 'moment'
 
 import FilterableAdvisorReportsTable from 'components/AdvisorReports/FilterableAdvisorReportsTable'
 import ProgramSummaryView from 'components/ProgramSummaryView'
-import FULLSCREEN_ICON from 'resources/fullscreen.png'
-import Fullscreen from "react-full-screen"
 import {Button} from 'react-bootstrap'
 
 import {Report} from 'models'
@@ -139,11 +136,7 @@ class BaseInsightsShow extends Page {
   constructor(props) {
     const insightConfig = INSIGHT_DETAILS[props.match.params.insight]
     super(props, DEFAULT_PAGE_PROPS, insightConfig.searchProps)
-    this.state = {isFull: false,...this.insightDefaultDates}
-  }
-
-  toggleFull = () => {
-    this.setState( {...this.state, isFull: !this.state.isFull} )
+    this.state = {...this.insightDefaultDates}
   }
 
   get insightDefaultDates() {
@@ -298,7 +291,6 @@ class BaseInsightsShow extends Page {
     const InsightComponent = insightConfig.component
     const insightPath = '/insights/' + this.props.match.params.insight
     const queryParams = this.getSearchQuery()
-    const fullscreenButton = <Button onClick={this.toggleFull} style={calendarButtonCss}><img src={FULLSCREEN_ICON} height={16} alt="Switch to fullscreen mode" /></Button>
     const flexStyle = {display: 'flex', flexDirection: 'column', height: '100%', flex: 1}
 
     return (
@@ -306,18 +298,13 @@ class BaseInsightsShow extends Page {
         <Breadcrumbs items={[['Insights ' + insightConfig.navTitle, insightPath]]} />
         <Messages error={this.state.error} success={this.state.success} />
         {this.state.referenceDate &&
-          <Fullscreen enabled={this.state.isFull}
-            onChange={isFull => this.setState({isFull})}>
-            <Fieldset id={this.props.match.params.insight} title={<span>
-              {insightConfig.title}{fullscreenButton}
-            </span>} style={flexStyle}>
-              <InsightComponent
-                style={flexStyle}
-                queryParams={queryParams}
-                date={this.state.referenceDate.clone()}
-              />
-            </Fieldset>
-          </Fullscreen>
+          <Fieldset id={this.props.match.params.insight} title={insightConfig.title} style={flexStyle}>
+            <InsightComponent
+              style={flexStyle}
+              queryParams={queryParams}
+              date={this.state.referenceDate.clone()}
+            />
+          </Fieldset>
         }
       </div>
     )

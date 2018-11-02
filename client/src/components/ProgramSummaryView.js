@@ -27,7 +27,7 @@ export default class ProgramSummaryView extends React.Component {
             if (element.uuid === task.customFieldRef1.uuid) 
                 return element
         }
-        while (task.customFieldRef1) 
+        while (task && task.customFieldRef1) 
             parents.unshift(task = this.state.data.find(matchParentTask))
         return parents
     }
