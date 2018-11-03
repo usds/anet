@@ -9,7 +9,6 @@ public class AuthorizationGroupSearchQuery extends AbstractSearchQuery {
 	private AuthorizationGroupStatus status;
 	private String positionUuid;
 	private AuthorizationGroupSearchSortBy sortBy;
-	private SortOrder sortOrder;
 
 	public AuthorizationGroupStatus getStatus() {
 		return status;
@@ -33,14 +32,6 @@ public class AuthorizationGroupSearchQuery extends AbstractSearchQuery {
 
 	public void setSortBy(AuthorizationGroupSearchSortBy sortBy) {
 	        this.sortBy = sortBy;
-	}
-
-	public SortOrder getSortOrder() {
-	        return sortOrder;
-	}
-
-	public void setSortOrder(SortOrder sortOrder) {
-	        this.sortOrder = sortOrder;
 	}
 
 	public static AuthorizationGroupSearchQuery withText(String text, int pageNum, int pageSize) {

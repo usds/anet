@@ -103,10 +103,6 @@ public class MssqlTaskSearcher implements ITaskSearcher {
 			args.put("customField", Utils.prepForLikeQuery(query.getCustomField()) + "%");
 		}
 
-		if (whereClauses.isEmpty()) {
-			return new AnetBeanList<Task>(query.getPageNum(), query.getPageSize(), new ArrayList<Task>());
-		}
-
 		sql.append(" WHERE ");
 		sql.append(Joiner.on(" AND ").join(whereClauses));
 		//Sort Ordering

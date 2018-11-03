@@ -28,20 +28,6 @@ public class TaskDao implements IAnetDao<Task> {
 		this.idBatcher = new IdBatcher<Task>(h, idBatcherSql, "uuids", new TaskMapper());
 	}
 	
-	public AnetBeanList<Task> getAll(int pageNum, int pageSize) {
-		String sql;
-		if (DaoUtils.isMsSql(dbHandle)) { 
-			sql = "/* getAllTasks */ SELECT tasks.*, COUNT(*) OVER() AS totalCount "
-					+ "FROM tasks ORDER BY \"createdAt\" ASC OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY";
-		} else { 
-			sql = "/* getAllTasks */ SELECT * from tasks ORDER BY \"createdAt\" ASC LIMIT :limit OFFSET :offset";
-		}
-		final Query query = dbHandle.createQuery(sql)
-				.bind("limit", pageSize)
-				.bind("offset", pageSize * pageNum);
-		return new AnetBeanList<Task>(query, pageNum, pageSize, new TaskMapper(), null);
-	}
-
 	public Task getByUuid(String uuid) {
 		return dbHandle.createQuery("/* getTaskByUuid */ SELECT * from tasks where uuid = :uuid")
 				.bind("uuid", uuid)

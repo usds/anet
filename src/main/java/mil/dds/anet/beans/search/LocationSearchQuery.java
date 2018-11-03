@@ -9,7 +9,6 @@ public class LocationSearchQuery extends AbstractSearchQuery {
 	private LocationStatus status;
 
 	private LocationSearchSortBy sortBy;
-	private SortOrder sortOrder;
 
 	public LocationStatus getStatus() {
 		return status;
@@ -25,14 +24,6 @@ public class LocationSearchQuery extends AbstractSearchQuery {
 
 	public void setSortBy(LocationSearchSortBy sortBy) {
 		this.sortBy = sortBy;
-	}
-
-	public SortOrder getSortOrder() {
-		return sortOrder;
-	}
-
-	public void setSortOrder(SortOrder sortOrder) {
-		this.sortOrder = sortOrder;
 	}
 
 	public static LocationSearchQuery withText(String text, int pageNum, int pageSize) {

@@ -26,11 +26,10 @@ public class PersonSearchQuery extends AbstractSearchQuery {
 	Boolean pendingVerification;
 	
 	private PersonSearchSortBy sortBy;
-	private SortOrder sortOrder;
 
 	public PersonSearchQuery() {
 		this.setPageSize(100);
-		this.sortOrder = SortOrder.ASC;
+		this.setSortOrder(SortOrder.ASC);
 		this.sortBy = PersonSearchSortBy.NAME;
 	}
 
@@ -112,14 +111,6 @@ public class PersonSearchQuery extends AbstractSearchQuery {
 
 	public void setSortBy(PersonSearchSortBy sortBy) {
 		this.sortBy = sortBy;
-	}
-
-	public SortOrder getSortOrder() {
-		return sortOrder;
-	}
-
-	public void setSortOrder(SortOrder sortOrder) {
-		this.sortOrder = sortOrder;
 	}
 
 	public static PersonSearchQuery withText(String text, int pageNum, int pageSize) {

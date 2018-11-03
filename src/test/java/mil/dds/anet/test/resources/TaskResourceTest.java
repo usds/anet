@@ -154,13 +154,4 @@ public class TaskResourceTest extends AbstractResourceTest {
 		final List<Task> searchResults5 = searchObjects5.getList();
 		assertThat(searchResults5.stream().filter(p -> p.getShortName().equals("1.1.A")).count()).isEqualTo(1);
 	}
-	
-	@Test
-	public void getAllTasksTest() { 
-		final Person jack = getJackJackson();
-		final AnetBeanList<Task> taskList = graphQLHelper.getAllObjects(jack, "tasks",
-				FIELDS, new GenericType<GraphQLResponse<AnetBeanList<Task>>>() {});
-		assertThat(taskList).isNotNull();
-		assertThat(taskList.getList()).isNotEmpty();
-	}
 }

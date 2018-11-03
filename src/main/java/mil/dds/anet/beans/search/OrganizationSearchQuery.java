@@ -18,7 +18,6 @@ public class OrganizationSearchQuery extends AbstractSearchQuery {
 	Boolean parentOrgRecursively;
 
 	private OrganizationSearchSortBy sortBy;
-	private SortOrder sortOrder;
 
 	public OrganizationStatus getStatus() {
 		return status;
@@ -58,14 +57,6 @@ public class OrganizationSearchQuery extends AbstractSearchQuery {
 
 	public void setSortBy(OrganizationSearchSortBy sortBy) {
 		this.sortBy = sortBy;
-	}
-
-	public SortOrder getSortOrder() {
-		return sortOrder;
-	}
-
-	public void setSortOrder(SortOrder sortOrder) {
-		this.sortOrder = sortOrder;
 	}
 
 	public static OrganizationSearchQuery withText(String text, int pageNum, int pageSize) {

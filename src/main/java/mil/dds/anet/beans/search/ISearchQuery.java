@@ -16,4 +16,8 @@ public interface ISearchQuery {
 	public int getPageSize();
 	
 	public void setPageSize(int pageSize);
+
+	public SortOrder getSortOrder();
+
+	public void setSortOrder(SortOrder sortOrder);
 }

@@ -49,15 +49,6 @@ public class TaskResource {
 	}
 	
 	@GET
-	@Timed
-	@GraphQLQuery(name="tasks")
-	@Path("/")
-	public AnetBeanList<Task> getAll(@DefaultValue("0") @QueryParam("pageNum") @GraphQLArgument(name="pageNum", defaultValue="0")Integer pageNum,
-			@DefaultValue("100") @QueryParam("pageSize") @GraphQLArgument(name="pageSize", defaultValue="100") Integer pageSize) {
-		return dao.getAll(pageNum, pageSize);
-	}
-	
-	@GET
 	@GraphQLQuery(name="task")
 	@Path("/{uuid}")
 	public Task getByUuid(@PathParam("uuid") @GraphQLArgument(name="uuid") String uuid) {

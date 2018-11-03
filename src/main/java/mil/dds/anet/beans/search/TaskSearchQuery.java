@@ -20,7 +20,6 @@ public class TaskSearchQuery extends AbstractSearchQuery {
 	private String customField;
 
 	private TaskSearchSortBy sortBy;
-	private SortOrder sortOrder;
 
 	public String getResponsibleOrgUuid() {
 		return responsibleOrgUuid;
@@ -104,18 +103,6 @@ public class TaskSearchQuery extends AbstractSearchQuery {
 
 	public TaskSearchSortBy getSortBy() {
 		return sortBy;
-	}
-
-	public void setSortBy(TaskSearchSortBy sortBy) {
-		this.sortBy = sortBy;
-	}
-
-	public SortOrder getSortOrder() {
-		return sortOrder;
-	}
-
-	public void setSortOrder(SortOrder sortOrder) {
-		this.sortOrder = sortOrder;
 	}
 
 	public static TaskSearchQuery withText(String text, int pageNum, int pageSize) {
