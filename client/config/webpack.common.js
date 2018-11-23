@@ -20,11 +20,16 @@ module.exports = {
         path: paths.appBuild,
     },
     resolve: {
-        modules: [paths.appSrc, "node_modules"]
+        modules: [paths.appSrc, "node_modules"],
+        extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js"]
     },
     module: {
         rules: [
-            {
+            { 
+                test: /\.tsx?$/, 
+                loader: "awesome-typescript-loader",
+                exclude: /node_modules/
+            }, {
                 test: /\.hbs$/,
                 loader: 'handlebars-loader'
             }, {
@@ -51,10 +56,6 @@ module.exports = {
                         cacheDirectory: true
                     }
                 }
-            }, {
-                test: /\.tsx?$/,
-                use: 'ts-loader',
-                exclude: /node_modules/
             }, {
                 test: /\.css$/,
                 use: [

@@ -1,11 +1,10 @@
-import PropTypes from 'prop-types'
 import React, {Component} from 'react'
 
 import NoPositionBanner from 'components/NoPositionBanner'
 import GeneralBanner from 'components/GeneralBanner'
 import SecurityBanner from 'components/SecurityBanner'
 import Header from 'components/Header'
-import {Person} from 'models'
+import Person from 'models/Person'
 import AppContext from 'components/AppContext'
 
 const GENERAL_BANNER_LEVEL = 'GENERAL_BANNER_LEVEL'
@@ -18,20 +17,27 @@ const visible = {
     USERS_AND_SUPER_USERS: 3
 }
 
-class BaseTopBar extends Component {
-	static propTypes = {
-		currentUser: PropTypes.instanceOf(Person),
-        appSettings: PropTypes.object,
-        topbarHeight: PropTypes.func.isRequired,
-	}
+interface BaseTopBarProps {
+    currentUser: Person,
+    appSettings: object,
+    topbarHeight: Function,
+    location: String,
+    toggleMenuAction: Function,
+    minimalHeader: Boolean
+}
 
-    constructor(props) {
-        super(props)
-        this.state = {
-            bannerVisibility: false,
-            height: 0,
-        }
-        this.topbarDiv = React.createRef()
+interface BaseTopBarState {
+    bannerVisibility: Boolean,
+    height: Number
+}
+
+class BaseTopBar extends Component<BaseTopBarProps,BaseTopBarState> {
+
+    protected topbarDiv: any = React.createRef()
+
+    public state = {
+        bannerVisibility: false,
+        height: 0,
     }
 
     componentDidMount() {
@@ -90,7 +96,7 @@ class BaseTopBar extends Component {
                 ref={this.topbarDiv}
             >
                 <div>
-                    {this.props.currentUser && this.props.position && this.props.position.uuid === 0 && !this.props.isNewUser() && <NoPositionBanner />}
+                    {this.props.currentUser && !this.props.currentUser.hasAssignedPosition() && !this.props.currentUser.isNewUser() && <NoPositionBanner />}
                     <GeneralBanner options={this.bannerOptions()} />
                     <SecurityBanner location={this.props.location} />
                     <Header minimalHeader={this.props.minimalHeader} toggleMenuAction={this.props.toggleMenuAction}/>

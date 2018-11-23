@@ -5,44 +5,20 @@ import LinkTo from 'components/LinkTo'
 import utils from 'utils'
 import Settings from 'Settings'
 
-import {Position, Organization} from 'models'
+import Position from 'models/Position'
+import Organization from 'models/Organization'
 
 import RS_ICON from 'resources/rs_small.png'
 import AFG_ICON from 'resources/afg_small.png'
 
 import _isEmpty from 'lodash/isEmpty'
 
-export default class Person extends Model {
+
+class Person extends Model {
 	static resourceName = 'Person'
 	static listName = 'personList'
 	static getInstanceName = 'person'
-
-	static STATUS = {
-		NEW_USER: 'NEW_USER',
-		ACTIVE: 'ACTIVE',
-		INACTIVE: 'INACTIVE'
-	}
-
-	static ROLE = {
-		ADVISOR: 'ADVISOR',
-		PRINCIPAL: 'PRINCIPAL'
-	}
-
 	static nameDelimiter = ','
-
-	static schema = {
-		name: '',
-		get status() { return Person.STATUS.ACTIVE },
-		country: '',
-		rank: '',
-		gender: 'MALE',
-		phoneNumber: '',
-		endOfTourDate: null,
-		biography: '',
-		get role() { return Person.ROLE.PRINCIPAL },
-		position: {},
-	}
-
 	static autocompleteQuery = "uuid, name, role, rank, position { uuid, name, code, organization { uuid, shortName }, location {uuid, name} }"
 
 	static autocompleteTemplate(person) {
@@ -61,6 +37,18 @@ export default class Person extends Model {
 		}
 		throw new Error(`Unrecognized role: ${role}`)
 	}
+
+	public uuid: String
+	public name: String
+	public status: Person.STATUS
+	public country: String
+	public rank: String
+	public gender: String
+	public phoneNumber: String
+	public endOfTourDate: Date
+	public biography: String
+	public role: Person.ROLE
+	public position: any
 
 	humanNameOfRole() {
 		return Person.humanNameOfRole(this.role)
@@ -145,7 +133,7 @@ export default class Person extends Model {
 			return(`${Person.formattedLastName(person.lastName, doTrim)}${Person.nameDelimiter} ${Person.formattedFirstName(person.firstName, doTrim)}`)
 		}
 		else if (person.lastName) {
-			return Person.formattedLastName(person.lastName)
+			return Person.formattedLastName(person.lastName, false)
 		}
 		else {
 			return ''
@@ -185,5 +173,18 @@ export default class Person extends Model {
 			}
 		)
 	}
-
 }
+
+module Person {
+	export const enum ROLE {
+		ADVISOR = "ADVISOR",
+		PRINCIPAL = "PRINCIPAL"
+	}
+	export const enum STATUS {
+		NEW_USER = "NEW_USER",
+		ACTIVE = "ACTIVE",
+		INACTIVE = 'INACTIVE'
+	}
+}
+
+export default Person
