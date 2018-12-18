@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+      "checkJs": true,
+      "baseUrl": "src/",
+      "noImplicitAny": false,
+      "allowSyntheticDefaultImports": true,
+      "experimentalDecorators": true,
+      "jsx": "react"
+    },
+    "exclude": [
+        "node_modules",
+        "**/node_modules/*"
+    ]
+} 
