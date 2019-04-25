@@ -109,6 +109,7 @@
     "graphiql": "^0.12.0",
     "graphql": "^0.13.2",
     "hopscotch": "^0.3.1",
+    "husky": "^2.1.0",
     "imports-loader": "^0.8.0",
     "leaflet": "^1.4.0",
     "leaflet-geosearch": "^2.7.0",
@@ -157,6 +158,11 @@
     "storybook": "start-storybook -p 9001 -c .storybook",
     "graphql": "graphql",
     "sim": "export SERVER_URL=${SERVER_URL:-'http://localhost:8080'} ; NODE_ENV=development webpack --mode development --config config/webpack.sim.dev.js && node build/anet.sim.dev.js ../anet.yml"
+  },
+  "husky": {
+    "hooks": {
+      "pre-push": "yarn run lint-fix ; yarn run test-jest ; yarn run test-wdio"
+    }
   },
   "jest": {
     "moduleDirectories": [
