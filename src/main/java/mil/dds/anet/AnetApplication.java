@@ -66,9 +66,13 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
 import org.everit.json.schema.loader.SchemaLoader;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.pac4j.core.config.Config;
+import org.pac4j.dropwizard.Pac4jBundle;
+import org.pac4j.dropwizard.Pac4jFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.vyarus.dropwizard.guice.GuiceBundle;
@@ -88,6 +92,13 @@ public class AnetApplication extends Application<AnetConfiguration> {
   public static void main(String[] args) throws Exception {
     new AnetApplication().run(args);
   }
+
+  private final Pac4jBundle<AnetConfiguration> pac4jBundle = new Pac4jBundle<AnetConfiguration>() {
+    @Override
+    public Pac4jFactory getPac4jFactory(AnetConfiguration configuration) {
+      return configuration.getPac4jConfig();
+    }
+  };
 
   @Override
   public String getName() {
@@ -145,10 +156,19 @@ public class AnetApplication extends Application<AnetConfiguration> {
         .build());
 
     metricRegistry = bootstrap.getMetricRegistry();
+
+    bootstrap.addBundle(pac4jBundle);
   }
 
   @Override
   public void run(AnetConfiguration configuration, Environment environment) {
+
+    environment.jersey().register(new AbstractBinder() {
+      @Override
+      protected void configure() {
+        bind(pac4jBundle.getConfig()).to(Config.class);
+      }
+    });
     // Get the Database connection up and running
     final String dbUrl = configuration.getDataSourceFactory().getUrl();
     logger.info("datasource url: {}", dbUrl);
