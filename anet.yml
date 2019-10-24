@@ -68,40 +68,18 @@ pac4jConfig:
   ajaxRequestResolver:
     class: org.pac4j.core.http.ajax.DefaultAjaxRequestResolver
   clientsProperties:
-    facebook.id: 145278422258960
-    facebook.secret: be21409ba8f39b5dae2a7de525484da8
-    saml.keystorePath: resource:samlKeystore.jks
-    saml.keystorePassword: pac4j-demo-passwd
-    saml.privateKeyPassword: pac4j-demo-passwd
-    saml.identityProviderMetadataPath: resource:metadata-okta.xml
-    saml.maximumAuthenticationLifetime: 3600
-    saml.serviceProviderEntityId: http://localhost:8080/callback?client_name=SAML2Client
-    saml.serviceProviderMetadataPath: sp-metadata.xml
-    anonymous: fakevalue
+    # DEMO ONLY, TODO: CHANGE TO REAL VALUES
+    # The values below allow to connect to a LDAP server running on localhost:389
+    # Image used: https://github.com/rroemhild/docker-test-openldap
     ldap.type: direct
-    ldap.url: ldap://ldap.jumpcloud.com:389
+    ldap.url: ldap://localhost:389
     ldap.useStartTls: false
     ldap.useSsl: false
     ldap.dnFormat: uid=%s,ou=Users,o=58e69adc0914b437324e7632,dc=jumpcloud,dc=com
-    ldap.usersDn: ou=Users,o=58e69adc0914b437324e7632,dc=jumpcloud,dc=com
+    ldap.usersDn: dc=planetexpress,dc=com
     ldap.principalAttributeId: uid
     ldap.principalAttributes: mail
     ldap.enhanceWithEntryResolver: false
-    formClient.loginUrl: /login.html
-    formClient.authenticator: ldap
-    encoder.spring.type: standard
-    encoder.spring.standard.secret: salt
-    db.jdbcUrl: jdbc:h2:mem:test
-    # username/password to authenticate on the DB
-    db.username: username
-    db.password: password
-    # pac4j username, password and other attributes stored in the columns
-    db.usernameAttribute: username
-    db.userPasswordAttribute: password
-    db.userAttributes: firstname
-    db.passwordEncoder: encoder.spring
-    indirectBasicAuth.authenticator: db
-    indirectBasicAuth.realName: DB authentication realm
   authorizers:
     mustBeAuth:
       class: org.pac4j.core.authorization.authorizer.IsAuthenticatedAuthorizer
