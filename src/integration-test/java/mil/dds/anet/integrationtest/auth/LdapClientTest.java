@@ -12,6 +12,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.pac4j.core.credentials.UsernamePasswordCredentials;
+import org.pac4j.core.exception.BadCredentialsException;
 import org.pac4j.core.profile.CommonProfile;
 import org.pac4j.ldap.profile.LdapProfile;
 import org.pac4j.ldap.profile.service.LdapProfileService;
@@ -115,5 +116,15 @@ public class LdapClientTest {
     assertThat(ldapProfile.getAttribute("sn")).isEqualTo("Fry");
     assertThat(ldapProfile.getAttribute("uid")).isEqualTo("fry");
     assertThat(ldapProfile.getAttribute("mail")).isEqualTo("fry@planetexpress.com");
+  }
+  
+  @Test (expected = BadCredentialsException.class)
+  public void testLdapClientFailedLogin() {
+
+    LdapProfileService ldapProfileService = loadLdapProfileService(config);
+
+    final UsernamePasswordCredentials credentials =
+        new UsernamePasswordCredentials("Philip J. Fry", "fry2");
+	ldapProfileService.validate(credentials, null);
   }
 }
