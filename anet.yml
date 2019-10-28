@@ -68,14 +68,23 @@ pac4jConfig:
   ajaxRequestResolver:
     class: org.pac4j.core.http.ajax.DefaultAjaxRequestResolver
   clientsProperties:
-    # DEMO ONLY, TODO: CHANGE TO REAL VALUES
+    # DEMO ONLY. TODO: CHANGE TO REAL VALUES
+    # The values below allow to connect to a SAML server running on localhos
+    # Test docker image used: https://hub.docker.com/r/kristophjunge/test-saml-idp/
+    saml.keystorePath: resource:samlKeystore.jks	    
+    saml.keystorePassword: pac4j-demo-passwd	
+    saml.privateKeyPassword: pac4j-demo-passwd	
+    saml.identityProviderMetadataPath: resource:idp-metadata.xml
+    saml.maximumAuthenticationLifetime: 3600	
+    saml.serviceProviderEntityId: http://localhost:8080/simplesaml/saml2/idp/metadata.php
+    saml.serviceProviderMetadataPath: sp-metadata.xml
     # The values below allow to connect to a LDAP server running on localhost:389
-    # Image used: https://github.com/rroemhild/docker-test-openldap
+    # Test docker image used: https://github.com/rroemhild/docker-test-openldap
     ldap.type: direct
     ldap.url: ldap://localhost:389
     ldap.useStartTls: false
     ldap.useSsl: false
-    ldap.dnFormat: uid=%s,ou=Users,o=58e69adc0914b437324e7632,dc=jumpcloud,dc=com
+    ldap.dnFormat: ou=people,dc=planetexpress,dc=com
     ldap.usersDn: dc=planetexpress,dc=com
     ldap.principalAttributeId: uid
     ldap.principalAttributes: mail
