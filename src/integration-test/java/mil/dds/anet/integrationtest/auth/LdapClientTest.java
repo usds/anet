@@ -43,22 +43,17 @@ public class LdapClientTest {
   }
 
   private static void setupConfig() {
-    when(config.getDictionaryEntry("pac4jConfig.clientsProperties.ldap.url"))
-        .thenReturn("ldap://localhost:389");
-    when(config.getDictionaryEntry("pac4jConfig.clientsProperties.ldap.useStartTls"))
-        .thenReturn(false);
-    when(config.getDictionaryEntry("pac4jConfig.clientsProperties.ldap.useSsl")).thenReturn(false);
-    when(config.getDictionaryEntry("pac4jConfig.clientsProperties.ldap.connectTimeout"))
-        .thenReturn(500);
-    when(config.getDictionaryEntry("pac4jConfig.clientsProperties.ldap.responseTimeout"))
-        .thenReturn(1000);
-    when(config.getDictionaryEntry("pac4jConfig.clientsProperties.ldap.dnFormat"))
+    final String ldapPath = "pac4jConfig.clientsProperties.ldap.";
+    when(config.getDictionaryEntry(ldapPath + "url")).thenReturn("ldap://localhost:389");
+    when(config.getDictionaryEntry(ldapPath + "useStartTls")).thenReturn(false);
+    when(config.getDictionaryEntry(ldapPath + "useSsl")).thenReturn(false);
+    when(config.getDictionaryEntry(ldapPath + "connectTimeout")).thenReturn(500);
+    when(config.getDictionaryEntry(ldapPath + "responseTimeout")).thenReturn(1000);
+    when(config.getDictionaryEntry(ldapPath + "dnFormat"))
         .thenReturn("cn=%s,ou=people,dc=planetexpress,dc=com");
-    when(config.getDictionaryEntry("pac4jConfig.clientsProperties.ldap.usersDn"))
-        .thenReturn("dc=planetexpress,dc=com");
-    when(config.getDictionaryEntry("pac4jConfig.clientsProperties.ldap.principalAttributes"))
-        .thenReturn(
-            "cn,sn,description,displayName,employeeType,givenName,jpegPhoto,mail,ou,uid,userPassword");
+    when(config.getDictionaryEntry(ldapPath + "usersDn")).thenReturn("dc=planetexpress,dc=com");
+    when(config.getDictionaryEntry(ldapPath + "principalAttributes")).thenReturn(
+        "cn,sn,description,displayName,employeeType,givenName,jpegPhoto,mail,ou,uid,userPassword");
   }
 
   @Test
@@ -117,14 +112,14 @@ public class LdapClientTest {
     assertThat(ldapProfile.getAttribute("uid")).isEqualTo("fry");
     assertThat(ldapProfile.getAttribute("mail")).isEqualTo("fry@planetexpress.com");
   }
-  
-  @Test (expected = BadCredentialsException.class)
+
+  @Test(expected = BadCredentialsException.class)
   public void testLdapClientFailedLogin() {
 
     LdapProfileService ldapProfileService = loadLdapProfileService(config);
 
     final UsernamePasswordCredentials credentials =
         new UsernamePasswordCredentials("Philip J. Fry", "fry2");
-	ldapProfileService.validate(credentials, null);
+    ldapProfileService.validate(credentials, null);
   }
 }

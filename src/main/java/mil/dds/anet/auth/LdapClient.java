@@ -24,15 +24,13 @@ public final class LdapClient {
   private final int responseTimeout;
 
   public LdapClient(final AnetConfiguration config) {
-    url = (String) config.getDictionaryEntry("pac4jConfig.clientsProperties.ldap.url");
-    dnFormat = (String) config.getDictionaryEntry("pac4jConfig.clientsProperties.ldap.dnFormat");
-    useStartTls =
-        (Boolean) config.getDictionaryEntry("pac4jConfig.clientsProperties.ldap.useStartTls");
-    useSsl = (Boolean) config.getDictionaryEntry("pac4jConfig.clientsProperties.ldap.useSsl");
-    connectTimeout =
-        (Integer) config.getDictionaryEntry("pac4jConfig.clientsProperties.ldap.connectTimeout");
-    responseTimeout =
-        (Integer) config.getDictionaryEntry("pac4jConfig.clientsProperties.ldap.responseTimeout");
+    final String ldapPath = "pac4jConfig.clientsProperties.ldap.";
+    url = (String) config.getDictionaryEntry(ldapPath + "url");
+    dnFormat = (String) config.getDictionaryEntry(ldapPath + "dnFormat");
+    useStartTls = (Boolean) config.getDictionaryEntry(ldapPath + "useStartTls");
+    useSsl = (Boolean) config.getDictionaryEntry(ldapPath + "useSsl");
+    connectTimeout = (Integer) config.getDictionaryEntry(ldapPath + "connectTimeout");
+    responseTimeout = (Integer) config.getDictionaryEntry(ldapPath + "responseTimeout");
 
     setup();
   }
