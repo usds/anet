@@ -57,7 +57,7 @@ public class LdapClientTest {
         .thenReturn("dc=planetexpress,dc=com");
     when(config.getDictionaryEntry("pac4jConfig.clientsProperties.ldap.principalAttributes"))
         .thenReturn(
-            "cn,sn,description,displayName,employeeName,givenName,jpegPhoto,mail,ou,uid,userPassword");
+            "cn,sn,description,displayName,employeeType,givenName,jpegPhoto,mail,ou,uid,userPassword");
   }
 
   @Test
@@ -110,7 +110,7 @@ public class LdapClientTest {
 
     final LdapProfile ldapProfile = (LdapProfile) profile;
     assertThat(ldapProfile.getId()).isEqualTo("Philip J. Fry");
-    assertThat(ldapProfile.getAttributes().size()).isEqualTo(10);
+    assertThat(ldapProfile.getAttributes().size()).isEqualTo(11);
     assertThat(ldapProfile.getAttribute("cn")).isEqualTo("Philip J. Fry");
     assertThat(ldapProfile.getAttribute("sn")).isEqualTo("Fry");
     assertThat(ldapProfile.getAttribute("uid")).isEqualTo("fry");
