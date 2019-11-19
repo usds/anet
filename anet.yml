@@ -72,12 +72,13 @@ pac4jConfig:
     # The values below allow to connect to a SAML server running on localhos
     # Test docker image used: https://hub.docker.com/r/kristophjunge/test-saml-idp/
     saml.keystorePath: resource:samlKeystore.jks	    
-    saml.keystorePassword: pac4j-demo-passwd	
-    saml.privateKeyPassword: pac4j-demo-passwd	
+    saml.keystorePassword: 123456	
+    saml.privateKeyPassword: 123456	
     saml.identityProviderMetadataPath: resource:idp-metadata.xml
     saml.maximumAuthenticationLifetime: 3600	
     saml.serviceProviderEntityId: http://localhost:8080/simplesaml/saml2/idp/metadata.php
     saml.serviceProviderMetadataPath: sp-metadata.xml
+    saml.callbackUrl: http://localhost:8080/simplesaml
     # The values below allow to connect to a LDAP server running on localhost:389
     # Test docker image used: https://github.com/rroemhild/docker-test-openldap
     ldap.type: direct
