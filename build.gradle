@@ -92,7 +92,7 @@ dependencies {
 	compile group: 'org.postgresql', name: 'postgresql', version: '42.2.8' // If using postgresql
 	compile group: 'org.liquibase', name: 'liquibase-core', version: '3.8.1' // or newer, for postgresql dropPrimaryKey fix [CORE-3129]
 
-  	compile group: 'org.pac4j', name: 'dropwizard-pac4j', version: '3.0.0'
+	compile group: 'org.pac4j', name: 'dropwizard-pac4j', version: '3.0.0'
 	compile group: 'org.pac4j', name: 'pac4j-core', version: '3.6.1'
 	compile group: 'org.pac4j', name: 'pac4j-oauth', version: '3.6.1'
 	compile group: 'org.pac4j', name: 'pac4j-http', version: '3.6.1'
@@ -100,6 +100,7 @@ dependencies {
 	compile group: 'org.pac4j', name: 'pac4j-saml', version: '3.6.1'
 	compile group: 'org.pac4j', name: 'pac4j-config', version: '3.6.1'
 	compile group: 'org.pac4j', name: 'pac4j-sql', version: '3.6.1'
+	compile group: 'org.pac4j', name: 'pac4j-kerberos', version: '3.6.1'
 
 	compile group: 'org.springframework.security.oauth', name: 'spring-security-oauth2', version: '2.3.6.RELEASE'
 
