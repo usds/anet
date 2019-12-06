@@ -63,6 +63,36 @@ waffleConfig:
   #"waffle.servlet.spi.NegotiateSecurityFilterProvider/protocols": NTLM
   "waffle.servlet.spi.BasicSecurityFilterProvider/realm": ANET
 
+pac4jConfig:
+  callbackUrl: /callback
+  ajaxRequestResolver:
+    class: org.pac4j.core.http.ajax.DefaultAjaxRequestResolver
+  clientsProperties:
+    # The values below allow to connect to a LDAP server running on localhost:389
+    # Test docker image used with these settings: https://github.com/rroemhild/docker-test-openldap
+    ldap.type: direct
+    ldap.url: ldap://localhost:389
+    ldap.useStartTls: false
+    ldap.useSsl: false
+    ldap.dnFormat: cn=%s,ou=people,dc=planetexpress,dc=com
+    ldap.usersDn: dc=planetexpress,dc=com
+    ldap.principalAttributeId: uid
+    ldap.principalAttributes: cn,sn,description,displayName,employeeType,givenName,jpegPhoto,mail,ou,uid,userPassword
+    ldap.enhanceWithEntryResolver: false
+
+  authorizers:
+    mustBeAuth:
+      class: org.pac4j.core.authorization.authorizer.IsAuthenticatedAuthorizer
+      redirectionUrl: /?mustBeAuth
+    mustBeAnon:
+      class: org.pac4j.core.authorization.authorizer.IsAnonymousAuthorizer
+      redirectionUrl: /?mustBeAnon
+  matchers:
+    excludedFbPath:
+      class: org.pac4j.core.matching.PathMatcher
+      excludedPaths:
+        - /facebook/notprotected.html
+
 ########################################################
 ### The below is the default Dropwizard Configuration
 ### See http://www.dropwizard.io/1.0.6/docs/manual/configuration.html#man-configuration

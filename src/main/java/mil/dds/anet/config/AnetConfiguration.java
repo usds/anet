@@ -12,6 +12,7 @@ import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import mil.dds.anet.utils.Utils;
+import org.pac4j.dropwizard.Pac4jFactory;
 
 public class AnetConfiguration extends Configuration implements AssetsBundleConfiguration {
 
@@ -33,6 +34,9 @@ public class AnetConfiguration extends Configuration implements AssetsBundleConf
 
   @NotNull
   private Map<String, String> waffleConfig = new HashMap<String, String>();
+
+  @JsonProperty
+  Pac4jFactory pac4jConfig = new Pac4jFactory();
 
   @Valid
   @NotNull
@@ -100,6 +104,14 @@ public class AnetConfiguration extends Configuration implements AssetsBundleConf
 
   public void setWaffleConfig(Map<String, String> config) {
     this.waffleConfig = config;
+  }
+
+  public Pac4jFactory getPac4jConfig() {
+    return pac4jConfig;
+  }
+
+  public void SetPac4jConfig(Pac4jFactory config) {
+    this.pac4jConfig = config;
   }
 
   public SmtpConfiguration getSmtp() {
