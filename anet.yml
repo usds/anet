@@ -78,7 +78,8 @@ pac4jConfig:
     ldap.usersDn: dc=planetexpress,dc=com
     ldap.principalAttributeId: uid
     ldap.principalAttributes: cn,sn,description,displayName,employeeType,givenName,jpegPhoto,mail,ou,uid,userPassword
-    ldap.enhanceWithEntryResolver: false
+    ldap.enhanceWithEntryResolver: true
+    formClient.authenticator: ldap
 
   authorizers:
     mustBeAuth:
