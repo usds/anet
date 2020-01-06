@@ -1,19 +1,29 @@
 import API from "api"
 import { gql } from "apollo-boost"
 import AppContext from "components/AppContext"
-import * as FieldHelper from "components/FieldHelper"
 import Fieldset from "components/Fieldset"
 import Leaflet from "components/Leaflet"
 import Messages from "components/Messages"
 import NavigationWarning from "components/NavigationWarning"
 import { jumpToTop } from "components/Page"
-import { Field, Form, Formik } from "formik"
 import _escape from "lodash/escape"
 import { Location, Person } from "models"
 import PropTypes from "prop-types"
 import React, { useState } from "react"
-import { Button } from "react-bootstrap"
+import {
+  Button,
+  Form,
+  FormGroup,
+  FormText,
+  FormFeedback,
+  Label,
+  Input,
+  Option,
+  Select
+} from "@bootstrap-styled/v4"
 import { useHistory } from "react-router-dom"
+import useForm from "react-hook-form"
+import { RHFInput as Field } from "react-hook-form-input"
 import { Coordinate } from "./Show"
 
 const GQL_CREATE_LOCATION = gql`
@@ -29,147 +39,197 @@ const GQL_UPDATE_LOCATION = gql`
   }
 `
 
+// const CustomInput = ({ label, onChange, register, required }) =>
+//   <>
+//     <label>{label}</label>
+//     <Input name={label} ref={register({ type: "custom" })} onChange={onChange} />
+//   </>
+
+// function InputField({ register, setValue, name }) {
+//   // const onValueChange = useCallback(
+//   //   e => ({
+//   //     value: e[0].floatValue
+//   //   }),
+//   //   []
+//   // );
+
+//   return (
+//     <RHFInput
+//       register={register}
+//       mode="onChange"
+//       name={name}
+//       setValue={setValue}
+//       as={<Input />}
+//     />
+//   )
+// }
+
+const ErrorMessage = ({ errors, name }) => {
+  // Note: if you are using FormContext, then you can use Errors without props eg:
+  // const { errors } = useFormContext();
+  if (!errors[name]) return null
+
+  return errors[name] && <p><FormFeedback color="muted">{errors[name].message}</FormFeedback></p>
+}
+
+const statusButtons = [
+  {
+    id: "statusActiveButton",
+    value: Location.STATUS.ACTIVE,
+    label: "Active"
+  },
+  {
+    id: "statusInactiveButton",
+    value: Location.STATUS.INACTIVE,
+    label: "Inactive"
+  }
+]
+
+const marker = ({ location, handleMarkerMove }) => {
+  return ({
+    id: location.id || 0,
+    name: _escape(location.name) || "", // escape HTML in location name!
+    lat: location.lat,
+    lng: location.lng,
+    draggable: true,
+    autoPan: true,
+    onMove: (event, map) => handleMarkerMove(event, map)
+  })
+}
+
+const LocationField = ({ register, setValue, marker }) =>
+  <FormGroup>
+    <Field
+      name="lat"
+      as={<Input type="hidden" />}
+      register={register}
+      setValue={setValue}
+      type="hidden"
+    />
+    <Field
+      name="lng"
+      as={<Input type="hidden" />}
+      register={register}
+      setValue={setValue}
+    />
+    <Leaflet
+      markers={[marker]}
+    />
+  </FormGroup>
+
+const SubmitButtonRow = ({ children }) =>
+  <div className="submit-buttons">
+    <div>{children[0]}</div>
+    {children[1]}
+  </div>
+
 const BaseLocationForm = props => {
-  const { currentUser, edit, title, ...myFormProps } = props
+  const { currentUser, edit, title, initialValues } = props // currentUser, edit, ...myFormProps
+  // const { handleSubmit } = useForm() // , register, errors
   const history = useHistory()
   const [error, setError] = useState(null)
   const canEditName =
     (!edit && currentUser.isSuperUser()) || (edit && currentUser.isAdmin())
-  const statusButtons = [
-    {
-      id: "statusActiveButton",
-      value: Location.STATUS.ACTIVE,
-      label: "Active"
-    },
-    {
-      id: "statusInactiveButton",
-      value: Location.STATUS.INACTIVE,
-      label: "Inactive"
-    }
-  ]
 
-  return (
-    <Formik
-      enableReinitialize
-      onSubmit={onSubmit}
-      validationSchema={Location.yupSchema}
-      isInitialValid
-      {...myFormProps}
-    >
-      {({
-        handleSubmit,
-        isSubmitting,
-        dirty,
-        errors,
-        setFieldValue,
-        values,
-        submitForm
-      }) => {
-        const marker = {
-          id: values.uuid || 0,
-          name: _escape(values.name) || "", // escape HTML in location name!
-          draggable: true,
-          autoPan: true,
-          onMove: (event, map) => onMarkerMove(event, map, setFieldValue)
-        }
-        if (Location.hasCoordinates(values)) {
-          Object.assign(marker, {
-            lat: values.lat,
-            lng: values.lng
-          })
-        }
-        const action = (
-          <div>
-            <Button
-              key="submit"
-              bsStyle="primary"
-              type="button"
-              onClick={submitForm}
-              disabled={isSubmitting}
-            >
-              Save Location
-            </Button>
-          </div>
-        )
-        return (
-          <div>
-            <NavigationWarning isBlocking={dirty} />
-            <Messages error={error} />
-            <Form className="form-horizontal" method="post">
-              <Fieldset title={title} action={action} />
-              <Fieldset>
-                <Field
-                  name="name"
-                  component={FieldHelper.renderInputField}
-                  disabled={!canEditName}
-                />
+  const { register, handleSubmit, formState, setValue, watch, reset, errors } = useForm({
+    defaultValues: { ...initialValues },
+    validationSchema: Location.yupSchema,
+    mode: "onChange"
+  })
+  const location = watch(["uuid", "name", "lat", "lng"])
+  const { uuid, lat, lng } = location
 
-                <Field
-                  name="status"
-                  component={FieldHelper.renderButtonToggleGroup}
-                  buttons={statusButtons}
-                  onChange={value => setFieldValue("status", value)}
-                />
+  const handleMarkerMove = (event, map) => {
+    const latLng = map.wrapLatLng(event.latlng)
+    setValue("lat", latLng.lat)
+    setValue("lng", latLng.lng)
+  }
 
-                <Field
-                  name="location"
-                  component={FieldHelper.renderReadonlyField}
-                  humanValue={
-                    <>
-                      <Coordinate coord={values.lat} />,{" "}
-                      <Coordinate coord={values.lng} />
-                    </>
-                  }
-                />
-              </Fieldset>
-
-              <h3>Drag the marker below to set the location</h3>
-              <Leaflet markers={[marker]} />
-
-              <div className="submit-buttons">
-                <div>
-                  <Button onClick={onCancel}>Cancel</Button>
-                </div>
-                <div>
-                  <Button
-                    id="formBottomSubmit"
-                    bsStyle="primary"
-                    type="button"
-                    onClick={submitForm}
-                    disabled={isSubmitting}
-                  >
-                    Save Location
-                  </Button>
-                </div>
-              </div>
-            </Form>
-          </div>
-        )
-      }}
-    </Formik>
+  const action = (
+    <div>
+      <Button
+        key="submit"
+        type="submit"
+        onClick={handleSubmit(onSubmit)}
+        disabled={formState.isSubmitting}
+      >
+        Save Location
+      </Button>
+    </div>
   )
 
-  function onMarkerMove(event, map, setFieldValue) {
-    const latLng = map.wrapLatLng(event.latlng)
-    setFieldValue("lat", latLng.lat)
-    setFieldValue("lng", latLng.lng)
-  }
+  return (
+    <div className="LocationForm">
+      <NavigationWarning isBlocking={formState.dirty} />
+      <Messages error={error} />
+      <Form onSubmit={handleSubmit(onSubmit)}>
+        <Fieldset title={title} action={action} />
+        <Fieldset>
+          <FormGroup color={errors["name"] && "danger"}>
+            <Label htmlFor="locationname">Name</Label>
+            <Field
+              register={register}
+              mode="onChange"
+              name="name"
+              id="locationName"
+              setValue={setValue}
+              as={<Input />}
+              disabled={!canEditName}
+              state={errors["name"] && "danger"}
+            />
+            <ErrorMessage {...{ errors, name: "name" }} />
+          </FormGroup>
+          <FormGroup>
+            <Label htmlFor="locationStatus">Status</Label>
+            <Field
+              id="locationStatus"
+              name="status"
+              as={<Select />}
+              children={statusButtons.map(item => (
+                <Option key={item.id} value={item.value}>
+                  {item.label}
+                </Option>
+              ))}
+              register={register}
+              setValue={setValue}
+            />
+            <ErrorMessage {...{ errors, name: "status" }} />
+          </FormGroup>
+          <Label>Location</Label>
+          <FormText>
+            <Coordinate coord={lat || 0} />, <Coordinate coord={lng || 0} />
+          </FormText>
+        </Fieldset>
+
+        <Fieldset title="Drag the marker below to set the location">
+          <LocationField
+            marker={marker({ ...{ location, handleMarkerMove } })}
+            register={register}
+            setValue={setValue}
+          />
+        </Fieldset>
+        <SubmitButtonRow>
+          <Button onClick={onCancel}>Cancel</Button>
+          {action}
+        </SubmitButtonRow>
+      </Form>
+    </div>
+  )
 
   function onCancel() {
     history.goBack()
   }
 
-  function onSubmit(values, form) {
-    return save(values, form)
-      .then(response => onSubmitSuccess(response, values, form))
+  function onSubmit(values) {
+    return save(values)
+      .then(response => onSubmitSuccess(response, values))
       .catch(error => {
         setError(error)
-        form.setSubmitting(false)
         jumpToTop()
       })
   }
 
-  function onSubmitSuccess(response, values, form) {
+  function onSubmitSuccess(response) {
     const { edit } = props
     const operation = edit ? "updateLocation" : "createLocation"
     const location = new Location({
@@ -179,7 +239,7 @@ const BaseLocationForm = props => {
     })
     // After successful submit, reset the form in order to make sure the dirty
     // prop is also reset (otherwise we would get a blocking navigation warning)
-    form.resetForm()
+    reset()
     if (!edit) {
       history.replace(Location.pathForEdit(location))
     }
@@ -188,8 +248,8 @@ const BaseLocationForm = props => {
     })
   }
 
-  function save(values, form) {
-    const location = Object.without(new Location(values), "notes")
+  function save(values) {
+    const location = Object.assign(values, { uuid })
     return API.mutation(
       props.edit ? GQL_UPDATE_LOCATION : GQL_CREATE_LOCATION,
       { location }

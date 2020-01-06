@@ -10,6 +10,7 @@ import {
   ToggleButton,
   ToggleButtonGroup
 } from "react-bootstrap"
+// import PropTypes from "prop-types"
 import utils from "utils"
 
 const getFieldId = field => field.id || field.name // name property is required
@@ -38,6 +39,13 @@ const getHelpBlock = (field, form) => {
   return fieldTouched && fieldError && <HelpBlock>{fieldError}</HelpBlock>
 }
 
+// const FieldHelpBlock = ({ field, form }) => {
+//   const { touched, errors } = form
+//   const fieldTouched = _get(touched, field.name)
+//   const fieldError = _get(errors, field.name)
+//   return fieldTouched && fieldError && <HelpBlock>{fieldError}</HelpBlock>
+// }
+
 const renderFieldNoLabel = (field, form, widgetElem, children) => {
   const id = getFieldId(field)
   const validationState = getFormGroupValidationState(field, form)
@@ -49,6 +57,53 @@ const renderFieldNoLabel = (field, form, widgetElem, children) => {
     </FormGroup>
   )
 }
+
+export const InputWidget = props =>
+  <FormControl
+    {...props}
+  />
+
+// InputWidget.propTypes = {
+//   value: PropTypes.string,
+//   innerRef: PropTypes.any,
+//   otherProps: PropTypes.any
+// }
+
+// const InputLabel = ({ vertical, children }) =>
+//   children && (
+//     <>
+//       {vertical ? (
+//         <ControlLabel> {children}</ControlLabel>
+//       ) : (
+//         <Col sm={2} componentClass={ControlLabel}>
+//           {children}
+//         </Col>
+//       )}
+//     </>
+//   )
+
+// const InputField = ({ field, label, vertical, widget, form, children }) => (
+//   <FormGroup controlId={id} validationState={validationState}>
+//     {vertical ? (
+//       <>
+//         <InputLabel vertical>{label}</InputLabel>
+//         {widget}
+//         <HelpBlock field={field} form={form} />
+//         {children}
+//       </>
+//     ) : (
+//       <>
+//         <InputLabel vertical>{label}</InputLabel>
+//         <Col sm={widgetWidth}>
+//           {widget}
+//           <HelpBlock field={field} form={form} />
+//           {children}
+//         </Col>
+//       </>
+//     )}
+//     {extraColElem && <Col sm={3} {...extraColElem.props} />}
+//   </FormGroup>
+// )
 
 const renderField = (
   field,
