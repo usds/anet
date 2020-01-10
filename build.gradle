@@ -105,6 +105,13 @@ dependencies {
 
 	compile group: 'org.springframework.security.oauth', name: 'spring-security-oauth2', version: '2.3.6.RELEASE'
 
+	// https://mvnrepository.com/artifact/com.kerb4j/kerb4j-client
+	compile group: 'com.kerb4j', name: 'kerb4j-client', version: '0.0.8'
+	// https://mvnrepository.com/artifact/com.kerb4j/kerb4j-common
+	compile group: 'com.kerb4j', name: 'kerb4j-common', version: '0.0.8'
+	// https://mvnrepository.com/artifact/com.kerb4j/kerb4j-server-common
+	compile group: 'com.kerb4j', name: 'kerb4j-server-common', version: '0.0.8'
+
 	compile 'javax.mail:mail:1.4.7'
 	compile 'ch.qos.logback:logback-classic:1.2.3'
 	compile 'ch.qos.logback:logback-core:1.2.3'

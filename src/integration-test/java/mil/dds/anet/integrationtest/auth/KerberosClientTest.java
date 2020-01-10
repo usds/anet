@@ -6,7 +6,18 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Base64;
-import org.ietf.jgss.GSSCredential;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.security.auth.kerberos.KerberosKey;
+import com.kerb4j.client.SpnegoClient;
+import com.kerb4j.server.marshall.Kerb4JException;
+import com.kerb4j.server.marshall.pac.Pac;
+import com.kerb4j.server.marshall.pac.PacLogonInfo;
+import com.kerb4j.server.marshall.pac.PacSid;
+import com.kerb4j.server.marshall.spnego.SpnegoInitToken;
+import com.kerb4j.server.marshall.spnego.SpnegoKerberosMechToken;
+import org.apache.kerby.kerberos.kerb.KrbException;
 import org.junit.Test;
 import org.pac4j.core.context.HttpConstants;
 import org.pac4j.core.profile.CommonProfile;
@@ -24,48 +35,59 @@ public class KerberosClientTest {
 
   @Test
   public void test() throws IOException {
-    /*
-    SunJaasKerberosTicketValidator validator = new SunJaasKerberosTicketValidator();
+    final SunJaasKerberosTicketValidator validator = new SunJaasKerberosTicketValidator();
     // HTTP/fully-qualified-domain-name@DOMAIN
-    validator.setServicePrincipal("jose/admin@LOCALHOST");
+    validator.setServicePrincipal("user8@LOCALHOST");
     // the keytab file must contain the keys for the service principal, and should be protected
-    validator.setKeyTabLocation(new FileSystemResource("/tmp/krb5cc_1001"));
-    // validator.setDebug(true);
-    */
-
-
-    SunJaasKerberosTicketValidator validator = new SunJaasKerberosTicketValidator();
-    // HTTP/fully-qualified-domain-name@DOMAIN
-    validator.setServicePrincipal("user4" + "@LOCALHOST");
-    // the keytab file must contain the keys for the service principal, and should be protected
-    validator.setKeyTabLocation(new FileSystemResource("/home/jose/Downloads/tmp2/http.localhost.keytab"));
+    validator.setKeyTabLocation(
+        new FileSystemResource("/home/jose/Downloads/tmp2/http.localhost.keytab"));
+    // validator.setHoldOnToGSSContext(true);
     validator.setDebug(true);
 
-    byte[] fileContent = new String(Files.readAllBytes(Paths.get("/tmp/krb5cc_1001"))).getBytes(StandardCharsets.UTF_8);
-    //assertThat(fileContent).isEqualTo("");
+    byte[] ticket = Files.readAllBytes(Paths.get("/tmp/krb5cc_0"));
+    // ticket = new String(ticket).getBytes(StandardCharsets.UTF_8);
+    ticket = Base64.getEncoder().encode(ticket);
 
-    byte[] KERBEROS_TICKET = Base64.getEncoder().encode(fileContent);
-    // byte[] KERBEROS_TICKET = Files.readAllBytes(Paths.get("/tmp/krb5cc_1001"));
-    //validator.validateTicket(KERBEROS_TICKET).username();
+    final String username = validator.validateTicket(ticket).username();
 
-    final DirectKerberosClient client = new DirectKerberosClient(new KerberosAuthenticator(validator));
+    final DirectKerberosClient client =
+        new DirectKerberosClient(new KerberosAuthenticator(validator));
 
-    String username = validator.validateTicket(fileContent).username();
-    
     assertThat(username).isEqualTo("");
-    
-    KerberosCredentials kc = new KerberosCredentials(KERBEROS_TICKET);
+
+    final KerberosCredentials kc = new KerberosCredentials(KERBEROS_TICKET);
     assertThat(kc.getUserProfile()).isNotNull();
     assertThat(client.getUserProfile(kc, null)).isNotNull();
 
     final MockWebContext context = MockWebContext.create();
 
-    context.addRequestHeader(HttpConstants.AUTHORIZATION_HEADER, "Negotiate " + new String(KERBEROS_TICKET, StandardCharsets.UTF_8));
+    context.addRequestHeader(HttpConstants.AUTHORIZATION_HEADER,
+        "Negotiate " + new String(KERBEROS_TICKET, StandardCharsets.UTF_8));
     final KerberosCredentials credentials = client.getCredentials(context);
-    assertThat(new String(Base64.getDecoder().decode(KERBEROS_TICKET), StandardCharsets.UTF_8)).isEqualTo(
-        new String(credentials.getKerberosTicket(), StandardCharsets.UTF_8));
+    assertThat(new String(Base64.getDecoder().decode(KERBEROS_TICKET), StandardCharsets.UTF_8))
+        .isEqualTo(new String(credentials.getKerberosTicket(), StandardCharsets.UTF_8));
 
     final CommonProfile profile = (CommonProfile) client.getUserProfile(credentials, context);
     assertThat(profile.getId()).isEqualTo("jose/admin@LOCALHOST");
   }
+
+  @Test
+  public void testKerb4j() throws Kerb4JException, KrbException, IOException {
+    final SpnegoClient spnegoClient =
+        SpnegoClient.loginWithKeyTab("user8", "/home/jose/Downloads/tmp2/http.localhost.keytab");
+    final KerberosKey[] a = spnegoClient.getKerberosKeys();
+
+    final byte[] ticket = Files.readAllBytes(Paths.get("/tmp/krb5cc_1001"));
+    // ticket = new String(ticket).getBytes(StandardCharsets.UTF_8);
+    // ticket = Base64.getEncoder().encode(ticket);
+
+    final SpnegoInitToken spnegoInitToken = new SpnegoInitToken(ticket);
+    final SpnegoKerberosMechToken spnegoKerberosMechToken =
+        spnegoInitToken.getSpnegoKerberosMechToken();
+    final Pac pac = spnegoKerberosMechToken.getPac(spnegoClient.getKerberosKeys());
+    final PacLogonInfo logonInfo = pac.getLogonInfo();
+    final List<String> roles = Stream.of(logonInfo.getGroupSids())
+        .map(PacSid::toHumanReadableString).collect(Collectors.toList());
+  }
+
 }
