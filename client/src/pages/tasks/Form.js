@@ -119,7 +119,6 @@ const BaseTaskForm = props => {
       enableReinitialize
       onSubmit={onSubmit}
       validationSchema={Task.yupSchema}
-      isInitialValid
       initialValues={initialValues}
       {...myFormProps}
     >
@@ -289,8 +288,14 @@ const BaseTaskForm = props => {
                         widget={
                           <RichTextEditor
                             className="textField"
-                            onHandleBlur={() =>
-                              setFieldTouched("assessment_customFieldEnum1")}
+                            onHandleBlur={() => {
+                              // validation will be done by setFieldValue
+                              setFieldTouched(
+                                "assessment_customFieldEnum1",
+                                true,
+                                false
+                              )
+                            }}
                           />
                         }
                       />
@@ -340,7 +345,7 @@ const BaseTaskForm = props => {
   function customEnumButtons(list) {
     const buttons = []
     for (const key in list) {
-      if (list.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(list, key)) {
         buttons.push({
           id: key,
           value: key,

@@ -110,7 +110,6 @@ const BasePersonForm = props => {
       enableReinitialize
       onSubmit={onSubmit}
       validationSchema={Person.yupSchema}
-      isInitialValid
       initialValues={initialValues}
       {...myFormProps}
     >
@@ -474,7 +473,10 @@ const BasePersonForm = props => {
                   widget={
                     <RichTextEditor
                       className="biography"
-                      onHandleBlur={() => setFieldTouched("biography")}
+                      onHandleBlur={() => {
+                        // validation will be done by setFieldValue
+                        setFieldTouched("biography", true, false)
+                      }}
                     />
                   }
                 />
