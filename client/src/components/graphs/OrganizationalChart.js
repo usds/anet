@@ -9,14 +9,18 @@ import {
 import * as d3 from "d3"
 import _xor from "lodash/xor"
 import { Symbol } from "milsymbol"
-import { Organization, Position } from "models"
+import { Organization, Position, Person } from "models"
 import PropTypes from "prop-types"
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { connect } from "react-redux"
 import { useHistory } from "react-router-dom"
 import DEFAULT_AVATAR from "resources/default_avatar.svg"
+import EMPTY_SET from "resources/empty_set.svg"
 import COLLAPSE_ICON from "resources/organizations.png"
 import EXPAND_ICON from "resources/plus.png"
+
+const app6IconSize = 28
+const avatarSize = 32
 
 const GQL_GET_CHART_DATA = gql`
   query($uuid: String!) {
@@ -32,7 +36,7 @@ const GQL_GET_CHART_DATA = gql`
           rank
           name
           uuid
-          avatar(size: 32)
+          avatar(size: ${avatarSize})
         }
       }
       childrenOrgs(query: { pageNum: 0, pageSize: 0, status: ACTIVE }) {
@@ -87,7 +91,7 @@ const OrganizationalChart = ({
   height: initialHeight
 }) => {
   const [expanded, setExpanded] = useState([])
-  const [personnelDepth, setPersonnelDepth] = useState(5)
+  const [personnelDepth, setPersonnelDepth] = useState(9)
   const history = useHistory()
   const canvasRef = useRef(null)
   const svgRef = useRef(null)
@@ -96,7 +100,7 @@ const OrganizationalChart = ({
   const tree = useRef(d3.tree())
   const [root, setRoot] = useState(null)
   const [height, setHeight] = useState(initialHeight)
-  const nodeSize = [200, 100 + 11 * personnelDepth]
+  const nodeSize = [105, 100 + 11 * 5]
   const { loading, error, data } = API.useApiQuery(GQL_GET_CHART_DATA, {
     uuid: org.uuid
   })
@@ -168,14 +172,20 @@ const OrganizationalChart = ({
     canvas.attr(
       "transform",
       `translate(${width / 2 - scale * bounds.center[0]},${height / 2 -
-        scale * bounds.center[1]}) scale(${scale})`
+        scale * bounds.center[1] +
+        80}) scale(${scale})`
     )
 
     setHeight(scale * bounds.size[1] + 50)
   }, [nodeSize, canvas, data, height, width, root])
 
   useEffect(() => {
-    data && setExpanded([data.organization.uuid])
+    data &&
+      setExpanded(
+        [data.organization.uuid].concat(
+          data.organization.descendantOrgs.map(org => org.uuid)
+        )
+      )
   }, [data])
 
   useLayoutEffect(() => {
@@ -189,6 +199,7 @@ const OrganizationalChart = ({
       "d",
       d3
         .linkVertical()
+        .target(d => ({ x: d.target.x, y: d.target.y - 105 }))
         .x(d => d.x)
         .y(d => d.y)
     )
@@ -197,7 +208,7 @@ const OrganizationalChart = ({
       .enter()
       .append("path")
       .attr("class", "link")
-      .attr("stroke-opacity", " 0.3")
+      .attr("stroke-opacity", " 0.8")
       .attr(
         "d",
         d3
@@ -225,10 +236,7 @@ const OrganizationalChart = ({
 
     nodeSelect.exit().remove()
 
-    const iconNodeG = nodeEnter
-      .append("g")
-      .attr("class", "orgDetails")
-      .attr("transform", "translate(-8,-15)")
+    const iconNodeG = nodeEnter.append("g").attr("class", "orgDetails")
 
     iconNodeG
       .filter(d => d.data.childrenOrgs.length > 0)
@@ -236,8 +244,8 @@ const OrganizationalChart = ({
       .attr("class", "orgChildIcon")
       .attr("width", 12)
       .attr("height", 12)
-      .attr("x", -15)
-      .attr("y", 5)
+      .attr("x", -6)
+      .attr("y", -6)
       .on("click", d => setExpanded(expanded => _xor(expanded, [d.data.uuid])))
 
     node
@@ -248,6 +256,13 @@ const OrganizationalChart = ({
 
     iconNodeG
       .append("g")
+      .attr("transform", d => {
+        const positions = sortPositions(d.data.positions)
+        const unitcode = Settings.fields.person.ranks.find(
+          element => element.value === positions?.[0]?.person?.rank
+        )?.app6Modifier
+        return `translate(${-app6IconSize / 2 - 9},${unitcode ? -86 : -75})`
+      })
       .on("click", d => history.push(Organization.pathFor(d.data)))
       .each(function(d) {
         const positions = sortPositions(d.data.positions)
@@ -259,7 +274,7 @@ const OrganizationalChart = ({
           `S${
             d.data.type === Organization.TYPE.ADVISOR_ORG ? "F" : "N"
           }GPU------${unitcode || "-"}`,
-          { size: 22 }
+          { size: app6IconSize }
         )
         this.appendChild(sym.asDOM())
       })
@@ -267,27 +282,15 @@ const OrganizationalChart = ({
     iconNodeG
       .append("text")
       .on("click", d => history.push(Organization.pathFor(d.data)))
-      .attr("font-size", "20px")
+      .style("text-anchor", "middle")
+      .attr("font-size", "17px")
       .attr("font-family", "monospace")
       .attr("font-weight", "bold")
-      .attr("dy", 22)
-      .attr("x", 38)
+      .attr("dy", -90)
       .text(d =>
         d.data.shortName?.length > 12
           ? d.data.shortName.substring(0, 10) + ".."
           : d.data.shortName
-      )
-
-    iconNodeG
-      .append("text")
-      .on("click", d => history.push(Organization.pathFor(d.data)))
-      .attr("font-family", "monospace")
-      .attr("dy", 45)
-      .attr("x", -40)
-      .text(d =>
-        d.data.longName?.length > 21
-          ? d.data.longName.substring(0, 18) + ".."
-          : d.data.longName
       )
 
     const headG = nodeSelect.selectAll("g.head").data(
@@ -299,16 +302,17 @@ const OrganizationalChart = ({
       .enter()
       .append("g")
       .attr("class", "head")
-      .attr("transform", "translate(-63, 65)")
+      .attr("transform", "translate(0, -25)")
       .on("click", d => history.push(Position.pathFor(d)))
 
     headG.exit().remove()
 
     headGenter
       .append("image")
-      .attr("width", 26)
-      .attr("height", 26)
-      .attr("y", -15)
+      .attr("width", avatarSize)
+      .attr("height", avatarSize)
+      .attr("x", -avatarSize / 2)
+      .attr("y", -42)
       .attr(
         "href",
         d =>
@@ -320,32 +324,19 @@ const OrganizationalChart = ({
 
     headGenter
       .append("text")
-      .attr("x", 26)
-      .attr("y", -4)
+      .attr("y", -1)
       .attr("font-size", "11px")
       .attr("font-family", "monospace")
       .attr("font-weight", "bold")
-      .style("text-anchor", "start")
+      .style("text-anchor", "middle")
       .text((position, i) => {
         const name = `${position.person ? position.person.rank : ""} ${
-          position.person ? position.person.name : "unfilled"
+          position.person
+            ? Person.parseFullName(position.person.name).lastName
+            : "unfilled"
         }`
         return name.length > 23 ? name.substring(0, 21) + ".." : name
       })
-
-    headGenter
-      .append("text")
-      .attr("x", 26)
-      .attr("y", 6)
-      .attr("font-size", "11px")
-      .attr("font-family", "monospace")
-      .attr("font-weight", "bold")
-      .style("text-anchor", "start")
-      .text((position, i) =>
-        position.name.length > 23
-          ? position.name.substring(0, 21) + ".."
-          : position.name
-      )
 
     const positionsG = nodeSelect.selectAll("g.position").data(
       d => sortPositions(d.data.positions, personnelDepth).slice(1),
@@ -354,39 +345,28 @@ const OrganizationalChart = ({
 
     positionsG.exit().remove()
 
-    const positionsGA = positionsG
+    const positionGfn = (d, i, nodes) =>
+    `translate(${-6 + ((i - nodes.length / 2) * avatarSize) / 2.4},-12)`
+
+    positionsG
       .enter()
       .append("g")
       .attr("class", "position")
-      .attr("transform", (d, i) => `translate(-63,${87 + i * 11})`)
+      .attr("transform", positionGfn)
       .on("click", d => history.push(Position.pathFor(d)))
-
-    positionsGA
       .append("image")
-      .attr("width", 13)
-      .attr("height", 13)
+      .attr("width", avatarSize / 2)
+      .attr("height", avatarSize / 2)
       .attr("y", -10)
-      .attr(
-        "href",
-        d =>
-          d.person &&
-          (d.person.avatar
+      .attr("href", d =>
+        d.person
+          ? d.person.avatar
             ? "data:image/jpeg;base64," + d.person.avatar
-            : DEFAULT_AVATAR)
+            : DEFAULT_AVATAR
+          : EMPTY_SET
       )
 
-    positionsGA
-      .append("text")
-      .attr("x", 18)
-      .attr("font-size", "9px")
-      .attr("font-family", "monospace")
-      .style("text-anchor", "start")
-      .text((d, i) => {
-        const result = `${d.person ? d.person.rank : ""} ${
-          d.person ? d.person.name : "unfilled"
-        } ${d.name}`
-        return result.length > 31 ? result.substring(0, 28) + "..." : result
-      })
+    positionsG.attr("transform", positionGfn)
   }, [data, expanded, history, personnelDepth, root, link, node])
 
   if (done) {
