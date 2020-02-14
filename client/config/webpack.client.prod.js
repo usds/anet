@@ -8,6 +8,7 @@ const paths = require("./paths")
 const common = require("./webpack.common.js")
 
 const clientConfig = merge(common.clientConfig, {
+  mode: "production",
   bail: true,
   devtool: "source-map",
   resolve: {
@@ -16,9 +17,11 @@ const clientConfig = merge(common.clientConfig, {
   output: {
     publicPath: "/assets/client/",
     filename: "static/js/[name].[chunkhash:8].js",
-    chunkFilename: "static/js/[name].[chunkhash:8].chunk.js"
+    chunkFilename: "static/js/[name].[chunkhash:8].chunk.js",
+    ecmaVersion: 5
   },
   optimization: {
+    moduleIds: "hashed",
     minimize: true,
     minimizer: [
       new TerserPlugin({
@@ -39,7 +42,6 @@ const clientConfig = merge(common.clientConfig, {
   },
   plugins: [
     new CleanWebpackPlugin(),
-    new webpack.HashedModuleIdsPlugin(),
     new webpack.DefinePlugin({
       "process.env.NODE_ENV": JSON.stringify("production")
     }),

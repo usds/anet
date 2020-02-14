@@ -82,6 +82,9 @@ const commonConfig = {
 module.exports = {
   clientConfig: merge(commonConfig, {
     target: "web",
+    resolve: {
+      alias: { vm: "vm-browserify" }
+    },
     entry: {
       anet: [require.resolve("./polyfills"), "./src/index.js"]
     },
