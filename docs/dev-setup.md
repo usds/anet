@@ -24,7 +24,7 @@ This section describes the recommended Developer Environment and how to set it u
 - **The git clone command takes a long time, then fails.** Solution: Some networks block ssh. Try using the `https` URL from github to download the source code. 
 
 ## Set Up Gradle, Eclipse and NPM
-The frontend is run with `yarn`.  We recommend running the backend via `eclipse` if you are doing any backend development, and `gradle` if you are only doing frontend development.
+The frontend is run with `yarn` or `./gradlew yarn`.  We recommend running the backend via `eclipse` if you are doing any backend development, and `gradle` if you are only doing frontend development.
 
 1. Set up Gradle
    1. Open a command line in the `anet` directory that was retrieved from github.
@@ -32,7 +32,7 @@ The frontend is run with `yarn`.  We recommend running the backend via `eclipse`
    1. Run `./gradlew eclipse` (linux/mac) or `./gradlew.bat eclipse` (windows) to download all the java dependencies.  This can take several minutes depending on your internet connection.
 1. Set up npm
    1. Change Directories into the `client/` directory
-   1. Run `yarn install`  to download all the javascript dependencies.  This can take several minutes depending on your internet connection. If the command hangs, it may be because your network blocks ssh. Try the command again on a different network.
+   1. Run `yarn install` or `./gradlew yarn_install` to download all the javascript dependencies.  This can take several minutes depending on your internet connection. If the command hangs, it may be because your network blocks ssh. Try the command again on a different network.
 1. Set up Eclipse
    1. Eclipse will ask you for a `workspace` directory. You can choose any empty directory.
    1. Import the `anet/` directory into eclipse as an existing project.
@@ -163,7 +163,7 @@ The tests are reliant on the data looking pretty similar to what you'd get after
 1. Start a test SMTP server (in a Docker container) in your local development environment: `./gradlew -PtestEnv dockerCreateFakeSmtpServer dockerStartFakeSmtpServer`
 1. In order to run the client-side tests you must start a server using the test-database: `./gradlew -PtestEnv run`
 
-Run `yarn run lint-fix` to automatically fix some kinds of lint errors.
+Run `yarn run lintFix` or `./gradlew yarn_lintFix` to automatically fix some kinds of lint errors.
 
 #### Client-side testing locally
 To run the tests locally, make sure you have the server using the test-database running as above.

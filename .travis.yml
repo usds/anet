@@ -39,6 +39,7 @@ cache:
 install: true
 
 matrix:
+
   include:
     - name: "MS SQL Server tests"
       env:
@@ -52,18 +53,12 @@ matrix:
 script:
   - ./gradlew -PtestEnv dockerCreateFakeSmtpServer dockerStartFakeSmtpServer
   - ./gradlew -PtestEnv dockerCreateDB dockerStartDB dbWait dbMigrate dbLoad
-  - ./gradlew -PtestEnv jar check test jacocoTestReport
+  - ./gradlew -PtestEnv yarn_install yarn_lint jar check test jacocoTestReport
   - |
     ./gradlew -PtestEnv run &
     SERVER_PID=$!
     sleep 60
-  - |
-    YARN_BIN="$PWD"/.gradle/yarn/yarn-latest/bin
-    NODE_BIN=`echo "$PWD"/.gradle/nodejs/*/bin`
-    export PATH="$YARN_BIN":"$NODE_BIN":$PATH
-    cd client
-    yarn run lint
-    yarn run test-all
+  - ./gradlew -PtestEnv yarn_testAll
   - kill $SERVER_PID
   - head -1000 ../logs/clientLog.log
 

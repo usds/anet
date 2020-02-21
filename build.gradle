@@ -479,8 +479,51 @@ allprojects {
 	markdownToHtml.hardwraps = true
 }
 
-node {
+def nodeConfig = {
 	nodeModulesDir = file("${project.projectDir}/client")
 	version = '12.14.1'
 	download = true
+}
+
+node nodeConfig
+
+// workarounds for https://github.com/srs/gradle-node-plugin/issues/289
+tasks.yarn_install {
+	node nodeConfig
+}
+tasks.yarn_build {
+	node nodeConfig
+}
+tasks.yarn_start {
+	node nodeConfig
+}
+tasks.yarn_lint {
+	node nodeConfig
+}
+tasks.yarn_lintFix {
+	node nodeConfig
+}
+tasks.yarn_test {
+	node nodeConfig
+}
+tasks.yarn_testAll {
+	node nodeConfig
+}
+tasks.yarn_testE2e {
+	node nodeConfig
+}
+tasks.yarn_testWdio {
+	node nodeConfig
+}
+tasks.yarn_testJest {
+	node nodeConfig
+}
+tasks.yarn_storybook {
+	node nodeConfig
+}
+tasks.yarn_graphql {
+	node nodeConfig
+}
+tasks.yarn_sim {
+	node nodeConfig
 }
