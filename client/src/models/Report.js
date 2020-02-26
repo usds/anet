@@ -173,11 +173,6 @@ export default class Report extends Model {
         .object()
         .nullable()
         .default({}),
-      // not actually in the database, but used for validation:
-      tasksLevel1: yup
-        .array()
-        .nullable()
-        .default([]),
       tasks: yup
         .array()
         .nullable()
@@ -221,6 +216,7 @@ export default class Report extends Model {
         .label(Settings.fields.report.reportText),
       nextSteps: yup
         .string()
+        .nullable()
         .when(["engagementDate"], (engagementDate, schema) =>
           !Report.isFuture(engagementDate)
             ? schema.required(
