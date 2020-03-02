@@ -80,29 +80,20 @@ const BaseTaskForm = ({ currentUser, edit, title, initialValues }) => {
 
   initialValues.assessment_customFieldEnum1 = ""
 
-  const orgSearchQuery = {
-    status: Organization.STATUS.ACTIVE,
-    type: Organization.TYPE.ADVISOR_ORG
-  }
-
-  if (currentUser && currentUser.isSuperUser() && !currentUser.isAdmin()) {
-    Object.assign(orgSearchQuery, {
-      parentOrgUuid: currentUser.position.organization.uuid,
-      parentOrgRecursively: true
-    })
-  }
-
   const taskedOrganizationsFilters = {
-    allOrganizations: {
-      label: "All organizations",
-      queryVars: {}
+    allAdvisorOrganizations: {
+      label: "All advisor organizations",
+      queryVars: {
+        status: Organization.STATUS.ACTIVE,
+        type: Organization.TYPE.ADVISOR_ORG
+      }
     }
   }
 
   const tasksFilters = {
-    allTasks: {
-      label: "All tasks",
-      queryVars: {}
+    allObjectives: {
+      label: "All objectives", // TODO: Implement conditional labels, until then, we need to be explicit here
+      queryVars: { hasCustomFieldRef1: false }
     }
   }
   const positionsFilters = {
@@ -205,7 +196,7 @@ const BaseTaskForm = ({ currentUser, edit, title, initialValues }) => {
                 ) : (
                   <FastField
                     name="status"
-                    component={FieldHelper.RadioButtonToggleGroup}
+                    component={FieldHelper.RadioButtonToggleGroupField}
                     buttons={statusButtons}
                     onChange={value => setFieldValue("status", value)}
                   />
@@ -349,7 +340,7 @@ const BaseTaskForm = ({ currentUser, edit, title, initialValues }) => {
                       component={
                         disabled
                           ? FieldHelper.ReadonlyField
-                          : FieldHelper.RadioButtonToggleGroup
+                          : FieldHelper.RadioButtonToggleGroupField
                       }
                       buttons={FieldHelper.customEnumButtons(
                         Settings.fields.task.customFieldEnum1.enum
@@ -392,7 +383,7 @@ const BaseTaskForm = ({ currentUser, edit, title, initialValues }) => {
                     component={
                       disabled
                         ? FieldHelper.ReadonlyField
-                        : FieldHelper.RadioButtonToggleGroup
+                        : FieldHelper.RadioButtonToggleGroupField
                     }
                     buttons={FieldHelper.customEnumButtons(
                       Settings.fields.task.customFieldEnum2.enum

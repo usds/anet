@@ -9,7 +9,6 @@ import {
 import { resetPagination, SEARCH_OBJECT_LABELS, setSearchQuery } from "actions"
 import ButtonToggleGroup from "components/ButtonToggleGroup"
 import searchFilters, {
-  POSTITION_ORGANIZATION_FILTER_KEY,
   POSTITION_POSITION_TYPE_FILTER_KEY,
   SearchQueryPropType
 } from "components/SearchFilters"
@@ -29,19 +28,19 @@ import { connect } from "react-redux"
 import { useHistory } from "react-router-dom"
 import REMOVE_ICON from "resources/delete.png"
 
-function updateOrganizationFilterState(organizationFilter, positionType) {
-  if (organizationFilter) {
-    if (positionType === Position.TYPE.PRINCIPAL) {
-      organizationFilter.setState({
-        queryParams: { type: Organization.TYPE.PRINCIPAL_ORG }
-      })
-    } else if (positionType === Position.TYPE.ADVISOR) {
-      organizationFilter.setState({
-        queryParams: { type: Organization.TYPE.ADVISOR_ORG }
-      })
-    } else {
-      organizationFilter.setState({ queryParams: {} })
-    }
+const ORG_QUERY_PARAM_TYPES = {
+  NONE: {},
+  PRINCIPAL: { type: Organization.TYPE.PRINCIPAL_ORG },
+  ADVISOR: { type: Organization.TYPE.ADVISOR_ORG }
+}
+
+function getOrgQueryParams(positionType) {
+  if (positionType === Position.TYPE.PRINCIPAL) {
+    return ORG_QUERY_PARAM_TYPES.PRINCIPAL
+  } else if (positionType === Position.TYPE.ADVISOR) {
+    return ORG_QUERY_PARAM_TYPES.ADVISOR
+  } else {
+    return ORG_QUERY_PARAM_TYPES.NONE
   }
 }
 
@@ -60,14 +59,11 @@ const AdvancedSearch = ({
   const [filters, setFilters] = useState(
     searchQuery.filters ? searchQuery.filters.slice() : []
   )
-  const [positionTypeFilter, setPositionTypeFilter] = useState(null)
-  const [organizationFilter, setOrganizationFilter] = useState(null)
-
-  const ALL_FILTERS = searchFilters.searchFilters(
-    changePositionTypeFilter,
-    changeOrganizationFilter
+  // Keep orgFilterQueryParams as it depends on the value selected for the positionTypeFilter
+  const [orgFilterQueryParams, setOrgFilterQueryParams] = useState(
+    getOrgQueryParams(null)
   )
-
+  const ALL_FILTERS = searchFilters.searchFilters()
   const filterDefs = objectType ? ALL_FILTERS[objectType].filters : {}
   const existingKeys = filters.map(f => f.key)
   const moreFiltersAvailable =
@@ -100,10 +96,22 @@ const AdvancedSearch = ({
         <div className="advanced-search form-horizontal">
           <Form onSubmit={onSubmit}>
             <FormGroup>
-              <Col xs={11}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  flexWrap: "nowrap",
+                  padding: "10px"
+                }}
+              >
                 <ButtonToggleGroup
                   value={objectType}
                   onChange={changeObjectType}
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    flexWrap: "nowrap"
+                  }}
                 >
                   {possibleFilterTypes.map(type => (
                     <Button
@@ -115,14 +123,20 @@ const AdvancedSearch = ({
                     </Button>
                   ))}
                 </ButtonToggleGroup>
-              </Col>
-              <Col xs={1}>
-                {possibleFilterTypes.length > 1 && objectType && (
-                  <Button bsStyle="link" onClick={clearObjectType}>
-                    <img src={REMOVE_ICON} height={14} alt="Clear type" />
-                  </Button>
-                )}
-              </Col>
+
+                <Button
+                  bsStyle="link"
+                  onClick={clearObjectType}
+                  style={{
+                    visibility:
+                      possibleFilterTypes.length > 1 && objectType
+                        ? "visible"
+                        : "hidden"
+                  }}
+                >
+                  <img src={REMOVE_ICON} height={14} alt="Clear type" />
+                </Button>
+              </div>
             </FormGroup>
 
             <FormControl defaultValue={text} className="hidden" />
@@ -136,7 +150,8 @@ const AdvancedSearch = ({
                       filter={filter}
                       onRemove={removeFilter}
                       element={filterDefs[filter.key]}
-                      organizationFilter={organizationFilter}
+                      updateOrgFilterQueryParams={setOrgFilterQueryParams}
+                      orgFilterQueryParams={orgFilterQueryParams}
                     />
                   )
               )}
@@ -217,26 +232,10 @@ const AdvancedSearch = ({
     </Formik>
   )
 
-  function changePositionTypeFilter(positionTypeFilter) {
-    updateOrganizationFilter(positionTypeFilter, organizationFilter)
-    setPositionTypeFilter(positionTypeFilter)
-  }
-
-  function changeOrganizationFilter(organizationFilter) {
-    updateOrganizationFilter(positionTypeFilter, organizationFilter)
-    setOrganizationFilter(organizationFilter)
-  }
-
-  function updateOrganizationFilter(positionTypeFilter, organizationFilter) {
-    const positionType = positionTypeFilter
-      ? positionTypeFilter.state.value.value
-      : ""
-    updateOrganizationFilterState(organizationFilter, positionType)
-  }
-
   function changeObjectType(objectType) {
     setObjectType(objectType)
     setFilters([])
+    setOrgFilterQueryParams(getOrgQueryParams(null))
   }
 
   function clearObjectType() {
@@ -256,10 +255,8 @@ const AdvancedSearch = ({
     newFilters.splice(newFilters.indexOf(filter), 1)
     setFilters(newFilters)
 
-    if (filter.key === POSTITION_ORGANIZATION_FILTER_KEY) {
-      changeOrganizationFilter(null)
-    } else if (filter.key === POSTITION_POSITION_TYPE_FILTER_KEY) {
-      changePositionTypeFilter(null)
+    if (filter.key === POSTITION_POSITION_TYPE_FILTER_KEY) {
+      setOrgFilterQueryParams(getOrgQueryParams(null))
     }
   }
 
@@ -309,7 +306,13 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
 
 export default connect(mapStateToProps, mapDispatchToProps)(AdvancedSearch)
 
-const SearchFilter = ({ onRemove, filter, organizationFilter, element }) => {
+const SearchFilter = ({
+  onRemove,
+  filter,
+  element,
+  orgFilterQueryParams,
+  updateOrgFilterQueryParams
+}) => {
   const label = filter.key
   const ChildComponent = element.component
   const { queryKey } = element.props || undefined
@@ -324,6 +327,7 @@ const SearchFilter = ({ onRemove, filter, organizationFilter, element }) => {
           <ChildComponent
             value={filter.value || ""}
             onChange={onChange}
+            orgFilterQueryParams={orgFilterQueryParams}
             {...element.props}
           />
         </div>
@@ -338,12 +342,9 @@ const SearchFilter = ({ onRemove, filter, organizationFilter, element }) => {
 
   function onChange(value) {
     filter.value = value
-
     if (filter.key === POSTITION_POSITION_TYPE_FILTER_KEY) {
-      updateOrganizationFilterState(
-        organizationFilter,
-        filter.value.value || ""
-      )
+      const positionType = filter.value.value || ""
+      updateOrgFilterQueryParams(getOrgQueryParams(positionType))
     }
   }
 }
@@ -351,7 +352,8 @@ const SearchFilter = ({ onRemove, filter, organizationFilter, element }) => {
 SearchFilter.propTypes = {
   onRemove: PropTypes.func,
   filter: PropTypes.object,
-  organizationFilter: PropTypes.object,
+  orgFilterQueryParams: PropTypes.object,
+  updateOrgFilterQueryParams: PropTypes.func,
   element: PropTypes.shape({
     component: PropTypes.func.isRequired,
     props: PropTypes.object

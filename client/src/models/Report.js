@@ -15,7 +15,6 @@ export default class Report extends Model {
   static resourceName = "Report"
   static listName = "reportList"
   static getInstanceName = "report"
-  static getModelNameLinkTo = "report"
 
   static STATE = {
     DRAFT: "DRAFT",
@@ -173,11 +172,6 @@ export default class Report extends Model {
         .object()
         .nullable()
         .default({}),
-      // not actually in the database, but used for validation:
-      tasksLevel1: yup
-        .array()
-        .nullable()
-        .default([]),
       tasks: yup
         .array()
         .nullable()
@@ -221,6 +215,7 @@ export default class Report extends Model {
         .label(Settings.fields.report.reportText),
       nextSteps: yup
         .string()
+        .nullable()
         .when(["engagementDate"], (engagementDate, schema) =>
           !Report.isFuture(engagementDate)
             ? schema.required(
@@ -287,6 +282,8 @@ export default class Report extends Model {
             If you do not do so, you will remain the only one authorized to see the sensitive information you have entered`)
       )
   })
+
+  static autocompleteQuery = "uuid, intent, author { uuid, name, rank, role }"
 
   constructor(props) {
     super(Model.fillObject(props, Report.yupSchema))

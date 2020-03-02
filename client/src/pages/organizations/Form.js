@@ -181,7 +181,10 @@ const BaseOrganizationForm = ({ currentUser, edit, title, initialValues }) => {
                       label={Settings.fields.organization.parentOrg}
                       humanValue={
                         values.parentOrg && (
-                          <LinkTo organization={values.parentOrg}>
+                          <LinkTo
+                            modelType="Organization"
+                            model={values.parentOrg}
+                          >
                             {values.parentOrg.shortName}{" "}
                             {values.parentOrg.longName}{" "}
                             {values.parentOrg.identificationCode}
@@ -214,7 +217,7 @@ const BaseOrganizationForm = ({ currentUser, edit, title, initialValues }) => {
                   <>
                     <FastField
                       name="type"
-                      component={FieldHelper.RadioButtonToggleGroup}
+                      component={FieldHelper.RadioButtonToggleGroupField}
                       buttons={typeButtons}
                       onChange={value => setFieldValue("type", value)}
                     />
@@ -258,7 +261,7 @@ const BaseOrganizationForm = ({ currentUser, edit, title, initialValues }) => {
                     />
                     <FastField
                       name="status"
-                      component={FieldHelper.RadioButtonToggleGroup}
+                      component={FieldHelper.RadioButtonToggleGroupField}
                       buttons={statusButtons}
                       onChange={value => setFieldValue("status", value)}
                       disabled={!isAdmin}

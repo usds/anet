@@ -260,16 +260,16 @@ const ReportSummaryRow = ({ report }) => {
       </Row>
       <Row>
         <Col md={12}>
-          <LinkTo person={report.primaryAdvisor} />
+          <LinkTo modelType="Person" model={report.primaryAdvisor} />
           <span>
             {" "}
-            (<LinkTo organization={report.advisorOrg} />)
+            (<LinkTo modelType="Organization" model={report.advisorOrg} />)
           </span>
           <span className="people-separator">&#x25B6;</span>
-          <LinkTo person={report.primaryPrincipal} />
+          <LinkTo modelType="Person" model={report.primaryPrincipal} />
           <span>
             {" "}
-            (<LinkTo organization={report.principalOrg} />)
+            (<LinkTo modelType="Organization" model={report.principalOrg} />)
           </span>
         </Col>
       </Row>
@@ -278,7 +278,7 @@ const ReportSummaryRow = ({ report }) => {
           <Col md={12}>
             <span>
               <strong>Location: </strong>
-              <LinkTo anetLocation={report.location} />
+              <LinkTo modelType="Location" model={report.location} />
             </span>
           </Col>
         </Row>
@@ -328,11 +328,10 @@ const ReportSummaryRow = ({ report }) => {
           {report.tasks.length > 0 && (
             <span>
               <strong>{pluralize(Settings.fields.task.shortLabel)}:</strong>{" "}
-              {report.tasks.map((task, i) => {
-                return (
+              {report.tasks.map(
+                (task, i) =>
                   task.shortName + (i < report.tasks.length - 1 ? ", " : "")
-                )
-              })}
+              )}
             </span>
           )}
         </Col>
@@ -352,7 +351,12 @@ const ReportSummaryRow = ({ report }) => {
       </Row>
       <Row className="hide-for-print">
         <Col className="read-report-actions" md={12}>
-          <LinkTo report={report} button className="read-report-button">
+          <LinkTo
+            modelType="Report"
+            model={report}
+            button
+            className="read-report-button"
+          >
             Read report
           </LinkTo>
         </Col>

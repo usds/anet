@@ -193,7 +193,7 @@ const BasePositionForm = ({ currentUser, edit, title, initialValues }) => {
                 ) : (
                   <FastField
                     name="type"
-                    component={FieldHelper.RadioButtonToggleGroup}
+                    component={FieldHelper.RadioButtonToggleGroupField}
                     buttons={typeButtons}
                     onChange={value => setFieldValue("type", value)}
                   />
@@ -201,7 +201,7 @@ const BasePositionForm = ({ currentUser, edit, title, initialValues }) => {
 
                 <FastField
                   name="status"
-                  component={FieldHelper.RadioButtonToggleGroup}
+                  component={FieldHelper.RadioButtonToggleGroupField}
                   buttons={statusButtons}
                   onChange={value => setFieldValue("status", value)}
                 >
@@ -209,8 +209,9 @@ const BasePositionForm = ({ currentUser, edit, title, initialValues }) => {
                     <HelpBlock>
                       <span className="text-danger">
                         Setting this position to inactive will automatically
-                        remove <LinkTo person={values.person} /> from this
-                        position.
+                        remove{" "}
+                        <LinkTo modelType="Person" model={values.person} /> from
+                        this position.
                       </span>
                     </HelpBlock>
                   )}
@@ -258,7 +259,7 @@ const BasePositionForm = ({ currentUser, edit, title, initialValues }) => {
                 {!isPrincipal && (
                   <FastField
                     name="permissions"
-                    component={FieldHelper.RadioButtonToggleGroup}
+                    component={FieldHelper.RadioButtonToggleGroupField}
                     buttons={permissionsButtons}
                     onChange={value => setFieldValue("permissions", value)}
                   />

@@ -10,13 +10,11 @@ const RemoveIcon = () => (
   <img src={REMOVE_ICON} height={14} alt="Remove attendee" />
 )
 
-const RemoveButton = ({ title, handleOnClick }) => {
-  return (
-    <Button bsStyle="link" title={title} onClick={handleOnClick}>
-      <RemoveIcon />
-    </Button>
-  )
-}
+const RemoveButton = ({ title, handleOnClick }) => (
+  <Button bsStyle="link" title={title} onClick={handleOnClick}>
+    <RemoveIcon />
+  </Button>
+)
 RemoveButton.propTypes = {
   title: PropTypes.string,
   handleOnClick: PropTypes.func
@@ -30,38 +28,34 @@ const AttendeeDividerRow = () => (
   </tr>
 )
 
-const TableHeader = ({ showDelete, hide }) => {
-  return (
-    <thead>
-      <tr>
-        <th className="col-xs-1" style={{ textAlign: "center" }}>
-          {!hide && "Primary"}
-        </th>
-        <th className="col-xs-3">{!hide && "Name"}</th>
-        <th className="col-xs-3">{!hide && "Position"}</th>
-        <th className="col-xs-2">{!hide && "Location"}</th>
-        <th className="col-xs-2">{!hide && "Organization"}</th>
-        {showDelete && <th className="col-xs-1" />}
-      </tr>
-    </thead>
-  )
-}
+const TableHeader = ({ showDelete, hide }) => (
+  <thead>
+    <tr>
+      <th className="col-xs-1" style={{ textAlign: "center" }}>
+        {!hide && "Primary"}
+      </th>
+      <th className="col-xs-3">{!hide && "Name"}</th>
+      <th className="col-xs-3">{!hide && "Position"}</th>
+      <th className="col-xs-2">{!hide && "Location"}</th>
+      <th className="col-xs-2">{!hide && "Organization"}</th>
+      {showDelete && <th className="col-xs-1" />}
+    </tr>
+  </thead>
+)
 TableHeader.propTypes = {
   showDelete: PropTypes.bool,
   hide: PropTypes.bool
 }
 
-const TableBody = ({ attendees, handleAttendeeRow, role, enableDivider }) => {
-  return (
-    <tbody>
-      {enableDivider && <AttendeeDividerRow />}
-      {Person.map(
-        attendees.filter(p => p.role === role),
-        person => handleAttendeeRow(person)
-      )}
-    </tbody>
-  )
-}
+const TableBody = ({ attendees, handleAttendeeRow, role, enableDivider }) => (
+  <tbody>
+    {enableDivider && <AttendeeDividerRow />}
+    {Person.map(
+      attendees.filter(p => p.role === role),
+      person => handleAttendeeRow(person)
+    )}
+  </tbody>
+)
 TableBody.propTypes = {
   attendees: PropTypes.array.isRequired,
   handleAttendeeRow: PropTypes.func,
@@ -72,31 +66,27 @@ TableBody.defaultProps = {
   attendees: []
 }
 
-const TableContainer = ({ className, children }) => {
-  return (
-    <Table striped condensed hover responsive className={className}>
-      {children}
-    </Table>
-  )
-}
+const TableContainer = ({ className, children }) => (
+  <Table striped condensed hover responsive className={className}>
+    {children}
+  </Table>
+)
 TableContainer.propTypes = {
   className: PropTypes.string,
   children: PropTypes.node
 }
 
-const RadioButton = ({ person, disabled, handleOnChange }) => {
-  return (
-    <Radio
-      name={`primaryAttendee${person.role}`}
-      className="primary"
-      checked={person.primary}
-      disabled={disabled}
-      onChange={() => !disabled && handleOnChange(person)}
-    >
-      {person.primary && <Label bsStyle="primary">Primary</Label>}
-    </Radio>
-  )
-}
+const RadioButton = ({ person, disabled, handleOnChange }) => (
+  <Radio
+    name={`primaryAttendee${person.role}`}
+    className="primary"
+    checked={person.primary}
+    disabled={disabled}
+    onChange={() => !disabled && handleOnChange(person)}
+  >
+    {person.primary && <Label bsStyle="primary">Primary</Label>}
+  </Radio>
+)
 RadioButton.propTypes = {
   person: PropTypes.object,
   disabled: PropTypes.bool,
@@ -143,11 +133,11 @@ const AttendeesTable = ({
           />
         </td>
         <td>
-          <LinkTo person={person} showIcon={false} />
+          <LinkTo modelType="Person" model={person} showIcon={false} />
         </td>
         <td>
           {person.position && person.position.uuid && (
-            <LinkTo position={person.position} />
+            <LinkTo modelType="Position" model={person.position} />
           )}
           {person.position && person.position.code
             ? `, ${person.position.code}`
@@ -155,14 +145,16 @@ const AttendeesTable = ({
         </td>
         <td>
           <LinkTo
+            modelType="Location"
+            model={person.position && person.position.location}
             whenUnspecified=""
-            anetLocation={person.position && person.position.location}
           />
         </td>
         <td>
           <LinkTo
+            modelType="Organization"
+            model={person.position && person.position.organization}
             whenUnspecified=""
-            organization={person.position && person.position.organization}
           />
         </td>
         {showDelete && (
