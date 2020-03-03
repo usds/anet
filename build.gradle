@@ -68,6 +68,11 @@ dependencies {
 	compile 'com.google.guava:guava:28.2-jre' // Pick the non-Android version of Guice
 	compile 'commons-collections:commons-collections:3.2.2'
 
+	// Authentication: kerb4j
+	compile group: 'com.kerb4j', name: 'kerb4j-client', version: '0.0.8'
+	compile group: 'com.kerb4j', name: 'kerb4j-common', version: '0.0.8'
+	compile group: 'com.kerb4j', name: 'kerb4j-server-common', version: '0.0.8'
+
 	// Supported databases:
 	compile group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '8.2.1.jre8'
 	compile group: 'org.postgresql', name: 'postgresql', version: '42.2.10' // If using postgresql

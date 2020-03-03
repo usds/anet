@@ -18,6 +18,10 @@ public class AnetDevAuthenticator implements Authenticator<BasicCredentials, Per
   private final PersonDao dao;
   private final Timer timerAuthenticate;
 
+  // TODO: Move to configuration
+  private final String keytabLocation = "home/jose/Downloads/tmp2/http.localhost.keytab";
+  private final String kerberosCacheLocation = "/tmp/krb5cc_1001";
+
   public AnetDevAuthenticator(AnetObjectEngine engine, MetricRegistry metricRegistry) {
     this.dao = engine.getPersonDao();
     this.timerAuthenticate =
