@@ -31,7 +31,8 @@ public class AnetKerberosAuthenticator implements Authenticator<BasicCredentials
         metricRegistry.timer(MetricRegistry.name(this.getClass(), "authenticate"));
 
     this.keytabFileLocation = config.getKerberosConfig().get("keytabLocation");
-    this.authenticationType = AUTHENTICATION_TYPE.valueOf(config.getKerberosConfig().get("authenticationType"));
+    this.authenticationType =
+        AUTHENTICATION_TYPE.valueOf(config.getKerberosConfig().get("authenticationType"));
   }
 
   @Override
@@ -69,15 +70,18 @@ public class AnetKerberosAuthenticator implements Authenticator<BasicCredentials
     try {
       SpnegoClient spnegoClient;
 
-      switch(authenticationType) {
+      switch (authenticationType) {
         case KEYTAB:
-          spnegoClient = SpnegoClient.loginWithKeyTab(credentials.getUsername(), keytabFileLocation);
+          spnegoClient =
+              SpnegoClient.loginWithKeyTab(credentials.getUsername(), keytabFileLocation);
           break;
         case TICKET:
-          spnegoClient = SpnegoClient.loginWithUsernamePassword(credentials.getUsername(), credentials.getPassword());
+          spnegoClient = SpnegoClient.loginWithUsernamePassword(credentials.getUsername(),
+              credentials.getPassword());
           break;
         case CACHE:
-          spnegoClient = SpnegoClient.loginWithUsernamePassword(credentials.getUsername(), credentials.getPassword(), true);
+          spnegoClient = SpnegoClient.loginWithUsernamePassword(credentials.getUsername(),
+              credentials.getPassword(), true);
           break;
         case TICKET_CACHE:
           spnegoClient = SpnegoClient.loginWithTicketCache(credentials.getUsername());
@@ -87,11 +91,11 @@ public class AnetKerberosAuthenticator implements Authenticator<BasicCredentials
           return false;
       }
 
-      spnegoClient.getKerberosKeys();      
+      spnegoClient.getKerberosKeys();
       return true;
-      } catch (final RuntimeException e) { // <-- Ugly
-        return false;
-      }
+    } catch (final RuntimeException e) { // <-- Ugly
+      return false;
+    }
   }
 
   public static enum AUTHENTICATION_TYPE {

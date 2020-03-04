@@ -182,17 +182,17 @@ public class AnetApplication extends Application<AnetConfiguration> {
 
     if (configuration.isDevelopmentMode()) {
       // In development mode chain URL params (used during testing) and basic HTTP Authentication
-      // final AnetDevAuthenticator authenticator = new AnetDevAuthenticator(engine, metricRegistry);
-      final AnetKerberosAuthenticator authenticator = new AnetKerberosAuthenticator(engine, metricRegistry, configuration);
+      // final AnetDevAuthenticator authenticator = new AnetDevAuthenticator(engine,
+      // metricRegistry);
+      final AnetKerberosAuthenticator authenticator =
+          new AnetKerberosAuthenticator(engine, metricRegistry, configuration);
       final UrlParamsAuthFilter<Person> urlParamsAuthFilter =
-          new UrlParamsAuthFilter.Builder<Person>()
-              .setAuthenticator(authenticator)
+          new UrlParamsAuthFilter.Builder<Person>().setAuthenticator(authenticator)
               // Acting only as Authz.
               .setAuthorizer(new AnetAuthenticationFilter(engine, metricRegistry)).setRealm("ANET")
               .buildAuthFilter();
       final BasicCredentialAuthFilter<Person> basicAuthFilter =
-          new BasicCredentialAuthFilter.Builder<Person>()
-              .setAuthenticator(authenticator)
+          new BasicCredentialAuthFilter.Builder<Person>().setAuthenticator(authenticator)
               // Acting only as Authz.
               .setAuthorizer(new AnetAuthenticationFilter(engine, metricRegistry)).setRealm("ANET")
               .buildAuthFilter();

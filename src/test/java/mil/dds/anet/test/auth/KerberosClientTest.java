@@ -1,6 +1,7 @@
 package mil.dds.anet.test.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import com.kerb4j.client.SpnegoClient;
 import org.junit.Test;
 
@@ -23,7 +24,7 @@ import org.junit.Test;
  * 
  * Verify keytab: klist -k <path_to_keytab_file>
  * 
- * /tmp/krb5cc_0 → Ticket cache 
+ * /tmp/krb5cc_0 → Ticket cache
  * 
  * /tmp/krb5cc_1001 → Ticket
  */
