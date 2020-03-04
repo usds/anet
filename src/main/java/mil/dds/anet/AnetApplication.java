@@ -42,6 +42,7 @@ import javax.servlet.Filter;
 import javax.servlet.FilterRegistration;
 import mil.dds.anet.auth.AnetAuthenticationFilter;
 import mil.dds.anet.auth.AnetDevAuthenticator;
+import mil.dds.anet.auth.AnetKerberosAuthenticator;
 import mil.dds.anet.auth.TimedNegotiateSecurityFilter;
 import mil.dds.anet.auth.UrlParamsAuthFilter;
 import mil.dds.anet.beans.Person;
@@ -181,15 +182,17 @@ public class AnetApplication extends Application<AnetConfiguration> {
 
     if (configuration.isDevelopmentMode()) {
       // In development mode chain URL params (used during testing) and basic HTTP Authentication
+      // final AnetDevAuthenticator authenticator = new AnetDevAuthenticator(engine, metricRegistry);
+      final AnetKerberosAuthenticator authenticator = new AnetKerberosAuthenticator(engine, metricRegistry, configuration);
       final UrlParamsAuthFilter<Person> urlParamsAuthFilter =
           new UrlParamsAuthFilter.Builder<Person>()
-              .setAuthenticator(new AnetDevAuthenticator(engine, metricRegistry))
+              .setAuthenticator(authenticator)
               // Acting only as Authz.
               .setAuthorizer(new AnetAuthenticationFilter(engine, metricRegistry)).setRealm("ANET")
               .buildAuthFilter();
       final BasicCredentialAuthFilter<Person> basicAuthFilter =
           new BasicCredentialAuthFilter.Builder<Person>()
-              .setAuthenticator(new AnetDevAuthenticator(engine, metricRegistry))
+              .setAuthenticator(authenticator)
               // Acting only as Authz.
               .setAuthorizer(new AnetAuthenticationFilter(engine, metricRegistry)).setRealm("ANET")
               .buildAuthFilter();

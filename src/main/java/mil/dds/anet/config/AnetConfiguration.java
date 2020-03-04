@@ -38,6 +38,9 @@ public class AnetConfiguration extends Configuration implements AssetsBundleConf
   @NotNull
   private Map<String, String> waffleConfig = new HashMap<String, String>();
 
+  @NotNull
+  private Map<String, String> kerberosConfig = new HashMap<String, String>();
+
   @Valid
   @NotNull
   private DataSourceFactory database = new DataSourceFactory();
@@ -112,6 +115,14 @@ public class AnetConfiguration extends Configuration implements AssetsBundleConf
 
   public void setWaffleConfig(Map<String, String> config) {
     this.waffleConfig = config;
+  }
+
+  public Map<String, String> getKerberosConfig() {
+    return kerberosConfig;
+  }
+
+  public void seKerberosConfig(Map<String, String> config) {
+    this.kerberosConfig = config;
   }
 
   public SmtpConfiguration getSmtp() {

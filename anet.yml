@@ -66,6 +66,10 @@ waffleConfig:
   #"waffle.servlet.spi.NegotiateSecurityFilterProvider/protocols": NTLM
   "waffle.servlet.spi.BasicSecurityFilterProvider/realm": ANET
 
+kerberosConfig:
+  keytabLocation: /home/jose/Downloads/tmp3/test_keytab
+  authenticationType: TICKET
+
 ########################################################
 ### The below is the default Dropwizard Configuration
 ### See http://www.dropwizard.io/1.0.6/docs/manual/configuration.html#man-configuration
